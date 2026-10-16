@@ -69,9 +69,9 @@ export default function LoginPage() {
           <div>
             <div className="w-16 h-16 rounded-2xl bg-white p-2 flex items-center justify-center shadow-xl shadow-blue-500/20 mb-8 overflow-hidden">
               <img 
-                src="/logo.png" 
+                src="/logo-icon.png" 
                 alt="SIM ASET Logo" 
-                className="w-full h-full object-contain" 
+                className="w-full h-full object-contain p-0.5" 
               />
             </div>
             

@@ -95,9 +95,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="p-6 flex items-center gap-3.5 border-b border-slate-800/80">
         <div className="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0 overflow-hidden">
           <img 
-            src="/logo.png" 
+            src="/logo-icon.png" 
             alt="SIM ASET Logo" 
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain p-0.5"
             onError={(e) => {
               (e.target as HTMLElement).style.display = 'none';
             }}
