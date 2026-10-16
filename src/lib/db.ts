@@ -1,0 +1,469 @@
+import fs from 'fs';
+import path from 'path';
+import { 
+  User, 
+  AssetCategory, 
+  Location, 
+  Asset, 
+  AssetHistory,
+  MaintenanceLog,
+  AssetCondition,
+  AssetStatus
+} from '@/types';
+
+interface DatabaseData {
+  users: User[];
+  categories: AssetCategory[];
+  locations: Location[];
+  assets: Asset[];
+  histories: AssetHistory[];
+  maintenanceLogs: MaintenanceLog[];
+}
+
+const DATA_DIR = path.join(process.cwd(), 'data');
+const DB_FILE = path.join(DATA_DIR, 'db.json');
+
+const INITIAL_DATA: DatabaseData = {
+  users: [
+    {
+      id: 'usr-1',
+      name: 'Admin',
+      username: 'admin',
+      email: 'admin@company.com',
+      role: 'super_admin',
+      department: 'Administrator',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'usr-2',
+      name: 'Budi',
+      username: 'budi',
+      email: 'budi@company.com',
+      role: 'staff',
+      department: 'User',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'usr-3',
+      name: 'Siti',
+      username: 'siti',
+      email: 'siti@company.com',
+      role: 'staff',
+      department: 'User',
+      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=120&auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'usr-4',
+      name: 'Andi',
+      username: 'andi',
+      email: 'andi@company.com',
+      role: 'admin_it',
+      department: 'Teknisi',
+      avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=120&auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'usr-5',
+      name: 'Rina',
+      username: 'rina',
+      email: 'rina@company.com',
+      role: 'management',
+      department: 'User',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'
+    }
+  ],
+
+  categories: [
+    { id: 'cat-1', slug: 'it', name: 'Perangkat IT', codePrefix: 'AST-IT', percentage: 35, count: 436 },
+    { id: 'cat-2', slug: 'furniture', name: 'Furniture', codePrefix: 'AST-FN', percentage: 20, count: 250 },
+    { id: 'cat-3', slug: 'kendaraan', name: 'Kendaraan', codePrefix: 'AST-KD', percentage: 15, count: 187 },
+    { id: 'cat-4', slug: 'elektronik', name: 'Elektronik', codePrefix: 'AST-EL', percentage: 12, count: 150 },
+    { id: 'cat-5', slug: 'mesin', name: 'Mesin & Peralatan', codePrefix: 'AST-MS', percentage: 10, count: 125 },
+    { id: 'cat-6', slug: 'lainnya', name: 'Lainnya', codePrefix: 'AST-LN', percentage: 8, count: 100 }
+  ],
+
+  locations: [
+    { id: 'loc-1', name: 'Kantor Pusat', description: 'Lokasi utama perusahaan', count: 420 },
+    { id: 'loc-2', name: 'Cabang A', description: 'Kantor cabang wilayah A', count: 280 },
+    { id: 'loc-3', name: 'Cabang B', description: 'Kantor cabang wilayah B', count: 210 },
+    { id: 'loc-4', name: 'Gudang', description: 'Gudang penyimpanan aset', count: 180 },
+    { id: 'loc-5', name: 'Ruang Rapat', description: 'Ruang rapat lantai 2', count: 120 },
+    { id: 'loc-6', name: 'Lainnya', description: 'Lokasi penempatan lain', count: 38 }
+  ],
+
+  assets: [
+    {
+      id: 'ast-1',
+      assetTag: 'AST-IT-0001',
+      name: 'Laptop Dell Latitude 5520',
+      category: 'Perangkat IT',
+      categorySlug: 'it',
+      location: 'Kantor Pusat - Divisi IT',
+      locationId: 'loc-1',
+      purchaseDate: '12 Januari 2024',
+      purchasePrice: 15000000,
+      condition: 'Baik',
+      status: 'Aktif',
+      brand: 'Dell',
+      model: 'Latitude 5520',
+      serialNumber: 'DL5520112345',
+      specification: 'Intel i5, 8GB RAM, 512GB SSD',
+      assignedTo: 'Tim IT',
+      notes: 'Laptop untuk operasional harian',
+      image: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2024-01-12T08:00:00Z',
+      updatedAt: '2026-10-16T08:00:00Z'
+    },
+    {
+      id: 'ast-2',
+      assetTag: 'AST-IT-0002',
+      name: 'PC Workstation',
+      category: 'Perangkat IT',
+      categorySlug: 'it',
+      location: 'Kantor Pusat',
+      locationId: 'loc-1',
+      purchaseDate: '15 Feb 2024',
+      purchasePrice: 28000000,
+      condition: 'Baik',
+      status: 'Aktif',
+      brand: 'HP',
+      model: 'Z4 G4 Workstation',
+      serialNumber: 'HPZ41109281',
+      specification: 'Intel Xeon W-2223, 32GB DDR4, NVIDIA RTX A4000',
+      assignedTo: 'Tim Desain',
+      notes: 'Komputer rendering dan video editing',
+      image: 'https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2024-02-15T08:00:00Z',
+      updatedAt: '2026-10-16T08:00:00Z'
+    },
+    {
+      id: 'ast-3',
+      assetTag: 'AST-FN-0001',
+      name: 'Meja Kerja',
+      category: 'Furniture',
+      categorySlug: 'furniture',
+      location: 'Cabang A',
+      locationId: 'loc-2',
+      purchaseDate: '10 Mar 2023',
+      purchasePrice: 2500000,
+      condition: 'Baik',
+      status: 'Aktif',
+      brand: 'Informa',
+      model: 'Ergonomic Desk 160',
+      serialNumber: 'INF-DK-2023-01',
+      specification: 'Rangka Besi Hollow & Top Kayu Mahoni 160x80cm',
+      assignedTo: 'Karyawan Cabang A',
+      notes: 'Meja kerja modular',
+      image: 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2023-03-10T08:00:00Z',
+      updatedAt: '2026-10-16T08:00:00Z'
+    },
+    {
+      id: 'ast-4',
+      assetTag: 'AST-KD-0001',
+      name: 'Toyota Avanza',
+      category: 'Kendaraan',
+      categorySlug: 'kendaraan',
+      location: 'Kantor Pusat',
+      locationId: 'loc-1',
+      purchaseDate: '05 Jan 2022',
+      purchasePrice: 220000000,
+      condition: 'Baik',
+      status: 'Aktif',
+      brand: 'Toyota',
+      model: 'Avanza 1.5 G MT',
+      serialNumber: 'MHFM1BA3J800192',
+      specification: '1500cc Dual VVT-i, Manual 5-Speed, Plat B 1234 XYZ',
+      assignedTo: 'Operasional Kantor',
+      notes: 'Mobil dinas operasional kantor pusat',
+      image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2022-01-05T08:00:00Z',
+      updatedAt: '2026-10-16T08:00:00Z'
+    },
+    {
+      id: 'ast-5',
+      assetTag: 'AST-EL-0001',
+      name: 'Proyektor Epson',
+      category: 'Elektronik',
+      categorySlug: 'elektronik',
+      location: 'Ruang Rapat',
+      locationId: 'loc-5',
+      purchaseDate: '12 Aug 2023',
+      purchasePrice: 7500000,
+      condition: 'Perbaikan',
+      status: 'Dalam Perbaikan',
+      brand: 'Epson',
+      model: 'EB-X500',
+      serialNumber: 'EPS77891230',
+      specification: '3600 Lumens XGA 3LCD, HDMI / VGA',
+      assignedTo: 'General Affairs',
+      notes: 'Lampu optik proyektor sedang diganti oleh vendor rekanan',
+      image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2023-08-12T08:00:00Z',
+      updatedAt: '2026-10-16T08:00:00Z'
+    },
+    {
+      id: 'ast-6',
+      assetTag: 'AST-IT-0003',
+      name: 'Printer HP LaserJet Pro',
+      category: 'Perangkat IT',
+      categorySlug: 'it',
+      location: 'Kantor Pusat',
+      locationId: 'loc-1',
+      purchaseDate: '15 Aug 2020',
+      purchasePrice: 4500000,
+      condition: 'Rusak',
+      status: 'Tidak Aktif',
+      brand: 'HP',
+      model: 'LaserJet M404dn',
+      serialNumber: 'HPLJ4048891',
+      specification: 'Duplex Monochrome Laser Printer',
+      assignedTo: 'Divisi HRD',
+      notes: 'Komponen roller rusak berat, proses pengajuan penghapusan aset',
+      image: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=400&auto=format&fit=crop&q=80',
+      createdAt: '2020-08-15T08:00:00Z',
+      updatedAt: '2026-10-16T08:00:00Z'
+    }
+  ],
+
+  histories: [
+    {
+      id: 'his-1',
+      date: '12 Sep 2026',
+      activityType: 'Peminjaman',
+      assetTag: 'AST-IT-0001',
+      assetName: 'Laptop Dell Latitude 5520',
+      description: 'Dipinjam oleh Bagas',
+      user: 'Bagas'
+    },
+    {
+      id: 'his-2',
+      date: '10 Sep 2026',
+      activityType: 'Perawatan',
+      assetTag: 'AST-EL-0001',
+      assetName: 'Proyektor Epson',
+      description: 'Servis rutin',
+      user: 'Tim IT'
+    },
+    {
+      id: 'his-3',
+      date: '05 Sep 2026',
+      activityType: 'Pindah Lokasi',
+      assetTag: 'AST-FN-0001',
+      assetName: 'Meja Kerja',
+      description: 'Dari Gudang ke Kantor Pusat',
+      user: 'Admin'
+    },
+    {
+      id: 'his-4',
+      date: '28 Aug 2026',
+      activityType: 'Perbaikan',
+      assetTag: 'AST-EL-0002',
+      assetName: 'AC Panasonic',
+      description: 'Ganti kompresor',
+      user: 'Tim Maintenance'
+    },
+    {
+      id: 'his-5',
+      date: '15 Aug 2026',
+      activityType: 'Penghapusan',
+      assetTag: 'AST-IT-0003',
+      assetName: 'Printer HP',
+      description: 'Rusak berat',
+      user: 'Admin'
+    }
+  ],
+
+  maintenanceLogs: [
+    {
+      id: 'mnt-1',
+      assetId: 'ast-5',
+      assetTag: 'AST-EL-0001',
+      assetName: 'Proyektor Epson',
+      type: 'Perbaikan',
+      scheduleDate: '2026-10-10',
+      completionDate: null,
+      vendorName: 'Epson Service Center',
+      cost: 1500000,
+      notes: 'Penggantian lampu proyektor dan kalibrasi sensor',
+      status: 'Sedang Berjalan'
+    }
+  ]
+};
+
+function ensureDbFile(): DatabaseData {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+
+  // Always rewrite or return structure
+  if (!fs.existsSync(DB_FILE)) {
+    fs.writeFileSync(DB_FILE, JSON.stringify(INITIAL_DATA, null, 2), 'utf-8');
+    return INITIAL_DATA;
+  }
+
+  try {
+    const raw = fs.readFileSync(DB_FILE, 'utf-8');
+    const parsed = JSON.parse(raw);
+    // Ensure all keys exist
+    if (!parsed.histories || !parsed.assets || !parsed.assets[0]?.category) {
+      fs.writeFileSync(DB_FILE, JSON.stringify(INITIAL_DATA, null, 2), 'utf-8');
+      return INITIAL_DATA;
+    }
+    return parsed as DatabaseData;
+  } catch (error) {
+    fs.writeFileSync(DB_FILE, JSON.stringify(INITIAL_DATA, null, 2), 'utf-8');
+    return INITIAL_DATA;
+  }
+}
+
+function saveDb(data: DatabaseData) {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+export const db = {
+  getUsers: (): User[] => ensureDbFile().users,
+  getCategories: (): AssetCategory[] => ensureDbFile().categories,
+  getLocations: (): Location[] => ensureDbFile().locations,
+  getHistories: (): AssetHistory[] => ensureDbFile().histories,
+
+  getAssets: (filter?: { category?: string; status?: string; location?: string; search?: string }): Asset[] => {
+    let list = ensureDbFile().assets;
+
+    if (filter?.category && filter.category !== 'Semua') {
+      list = list.filter(a => a.category.toLowerCase() === filter.category?.toLowerCase() || a.categorySlug === filter.category?.toLowerCase());
+    }
+    if (filter?.status && filter.status !== 'Semua') {
+      list = list.filter(a => a.status.toLowerCase() === filter.status?.toLowerCase());
+    }
+    if (filter?.location && filter.location !== 'Semua') {
+      list = list.filter(a => a.location.toLowerCase().includes(filter.location?.toLowerCase() || ''));
+    }
+    if (filter?.search) {
+      const q = filter.search.toLowerCase();
+      list = list.filter(a => 
+        a.name.toLowerCase().includes(q) || 
+        a.assetTag.toLowerCase().includes(q) ||
+        (a.brand && a.brand.toLowerCase().includes(q)) ||
+        (a.assignedTo && a.assignedTo.toLowerCase().includes(q))
+      );
+    }
+
+    return list.map(a => ({
+      ...a,
+      locationName: a.locationName || a.location,
+      assignedUserName: a.assignedUserName || a.assignedTo,
+      specificAttributes: a.specificAttributes || {
+        cpu: a.specification,
+        ram: '',
+        storage: '',
+        material: a.specification,
+        wattage: 1500,
+        vendorName: a.notes,
+        capacity: a.specification
+      }
+    }));
+  },
+
+  getAssetById: (id: string): Asset | undefined => {
+    const a = ensureDbFile().assets.find(item => item.id === id || item.assetTag.toLowerCase() === id.toLowerCase());
+    if (a) {
+      if (!a.locationName) a.locationName = a.location;
+      if (!a.assignedUserName) a.assignedUserName = a.assignedTo;
+      if (!a.specificAttributes) {
+        a.specificAttributes = {
+          cpu: a.specification,
+          ram: '',
+          storage: '',
+          material: a.specification,
+          wattage: 1500,
+          vendorName: a.notes,
+          capacity: a.specification
+        };
+      }
+    }
+    return a;
+  },
+
+  getAssetByTag: (tag: string): Asset | undefined => {
+    return db.getAssetById(tag);
+  },
+
+  updateQuantity: (id: string, delta: number): Asset | null => {
+    const data = ensureDbFile();
+    const idx = data.assets.findIndex(a => a.id === id || a.assetTag.toLowerCase() === id.toLowerCase());
+    if (idx === -1) return null;
+
+    const currentQty = data.assets[idx].quantity || 1;
+    const newQty = Math.max(0, currentQty + delta);
+    data.assets[idx].quantity = newQty;
+    data.assets[idx].updatedAt = new Date().toISOString();
+
+    saveDb(data);
+    return data.assets[idx];
+  },
+
+  createAsset: (asset: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>): Asset => {
+    const data = ensureDbFile();
+    const newAsset: Asset = {
+      ...asset,
+      id: `ast-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    data.assets.unshift(newAsset);
+
+    // Log history
+    data.histories.unshift({
+      id: `his-${Date.now()}`,
+      date: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
+      activityType: 'Peminjaman',
+      assetTag: newAsset.assetTag,
+      assetName: newAsset.name,
+      description: `Aset baru didaftarkan di ${newAsset.location}`,
+      user: newAsset.assignedTo || 'Admin'
+    });
+
+    saveDb(data);
+    return newAsset;
+  },
+
+  updateAsset: (id: string, updates: Partial<Asset>): Asset | null => {
+    const data = ensureDbFile();
+    const idx = data.assets.findIndex(a => a.id === id || a.assetTag.toLowerCase() === id.toLowerCase());
+    if (idx === -1) return null;
+
+    const existing = data.assets[idx];
+    const updated: Asset = {
+      ...existing,
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    data.assets[idx] = updated;
+
+    saveDb(data);
+    return updated;
+  },
+
+  deleteAsset: (id: string): boolean => {
+    const data = ensureDbFile();
+    const idx = data.assets.findIndex(a => a.id === id || a.assetTag.toLowerCase() === id.toLowerCase());
+    if (idx === -1) return false;
+
+    const removed = data.assets.splice(idx, 1)[0];
+    data.histories.unshift({
+      id: `his-${Date.now()}`,
+      date: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
+      activityType: 'Penghapusan',
+      assetTag: removed.assetTag,
+      assetName: removed.name,
+      description: 'Penghapusan aset dari sistem inventaris',
+      user: 'Admin'
+    });
+
+    saveDb(data);
+    return true;
+  }
+};

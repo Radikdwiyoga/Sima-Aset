@@ -1,0 +1,48 @@
+[
+  {
+    "id": "loan-1",
+    "loanNumber": "LOAN/2026/09/001",
+    "assetId": "ast-1",
+    "assetTag": "AST-IT-0001",
+    "assetName": "Laptop Dell Latitude 5520",
+    "borrowerName": "Bagas Pratama",
+    "borrowerDept": "Divisi Marketing",
+    "borrowDate": "2026-09-12",
+    "expectedReturnDate": "2026-10-25",
+    "purpose": "Dinas luar kota dan presentasi pitching klien di Surabaya",
+    "documentName": "Surat_Tugas_Dinas_Bagas.pdf",
+    "status": "Sedang Dipinjam",
+    "notes": "Kondisi fisik mulus, tas laptop dan charger lengkap diserahkan."
+  },
+  {
+    "id": "loan-2",
+    "loanNumber": "LOAN/2026/09/002",
+    "assetId": "ast-4",
+    "assetTag": "AST-KD-0001",
+    "assetName": "Toyota Avanza 1.3 G",
+    "borrowerName": "Ahmad Fauzi",
+    "borrowerDept": "Divisi Logistik",
+    "borrowDate": "2026-09-05",
+    "expectedReturnDate": "2026-09-08",
+    "actualReturnDate": "2026-09-08",
+    "purpose": "Distribusi material inventaris cabang",
+    "documentName": "Formulir_Peminjaman_Kendaraan.pdf",
+    "status": "Sudah Dikembalikan",
+    "notes": "Bahan bakar penuh, tidak ada baret pada bodi mobil."
+  },
+  {
+    "id": "loan-3",
+    "loanNumber": "LOAN/2026/10/003",
+    "assetId": "ast-5",
+    "assetTag": "AST-EL-0001",
+    "assetName": "Proyektor Epson EB-X500",
+    "borrowerName": "Siti Rahma",
+    "borrowerDept": "Divisi HRD",
+    "borrowDate": "2026-10-02",
+    "expectedReturnDate": "2026-10-18",
+    "purpose": "Pelatihan onboarding karyawan baru",
+    "documentName": "Nota_Dinas_HRD_Proyektor.pdf",
+    "status": "Sedang Dipinjam",
+    "notes": "Lengkap dengan kabel HDMI 10 meter dan remote."
+  }
+]
