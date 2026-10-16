@@ -13,7 +13,7 @@ import {
   RefreshCw,
   CameraOff
 } from 'lucide-react';
-import { Asset, AssetCondition } from '@/types';
+import { Asset, AssetCondition, AssetStatus } from '@/types';
 import { Html5Qrcode } from 'html5-qrcode';
 import { DataService } from '@/lib/dataService';
 
@@ -21,6 +21,7 @@ export default function StockOpnamePage() {
   const [assetTagInput, setAssetTagInput] = useState('');
   const [scannedAsset, setScannedAsset] = useState<Asset | null>(null);
   const [verifiedCondition, setVerifiedCondition] = useState<AssetCondition>('Baik');
+  const [verifiedStatus, setVerifiedStatus] = useState<AssetStatus>('Aktif');
   const [auditNotes, setAuditNotes] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
@@ -91,6 +92,18 @@ export default function StockOpnamePage() {
     };
   }, []);
 
+  const handleConditionChange = (c: AssetCondition) => {
+    setVerifiedCondition(c);
+    // Auto-sync status based on condition
+    if (c === 'Baik') {
+      setVerifiedStatus('Aktif');
+    } else if (c === 'Perbaikan') {
+      setVerifiedStatus('Dalam Perbaikan');
+    } else if (c === 'Rusak') {
+      setVerifiedStatus('Tidak Aktif');
+    }
+  };
+
   const handleLookup = async (tag: string) => {
     if (!tag.trim()) return;
     setFeedbackMessage(null);
@@ -100,12 +113,14 @@ export default function StockOpnamePage() {
       if (found) {
         setScannedAsset(found);
         setVerifiedCondition(found.condition);
+        setVerifiedStatus(found.status);
         setAuditNotes('');
       } else {
         const searchList = DataService.getAssets({ search: tag.trim() });
         if (searchList.length > 0) {
           setScannedAsset(searchList[0]);
           setVerifiedCondition(searchList[0].condition);
+          setVerifiedStatus(searchList[0].status);
           setAuditNotes('');
         } else {
           setFeedbackMessage({
@@ -124,12 +139,13 @@ export default function StockOpnamePage() {
 
     try {
       DataService.updateAsset(scannedAsset.id, {
-        condition: verifiedCondition
+        condition: verifiedCondition,
+        status: verifiedStatus
       });
 
       setFeedbackMessage({
         type: 'success',
-        text: `Berhasil memverifikasi aset ${scannedAsset.assetTag} (${scannedAsset.name}) dengan kondisi: ${verifiedCondition}`
+        text: `Berhasil memverifikasi ${scannedAsset.assetTag} (${scannedAsset.name}): Kondisi menjadi "${verifiedCondition}" & Status berubah menjadi "${verifiedStatus}"!`
       });
       setStats(prev => ({ ...prev, verified: prev.verified + 1 }));
       setScannedAsset(null);
@@ -265,7 +281,7 @@ export default function StockOpnamePage() {
                   Klik Cepat Contoh Tag (Simulasi Scan):
                 </span>
                 <div className="flex flex-wrap gap-1.5">
-                  {['OFF3001', 'OFF5002', '6FF2942', 'AF70940', 'FRN-2026-001'].map((tag) => (
+                  {['AST-EL-0001', 'AST-IT-0001', 'AST-FN-0001', 'AST-KD-0001', 'AST-IT-0003'].map((tag) => (
                     <button
                       key={tag}
                       onClick={() => {
@@ -318,21 +334,24 @@ export default function StockOpnamePage() {
                         {scannedAsset.assetTag}
                       </span>
                     </div>
-                    <p className="text-slate-500 text-[11px]">Lokasi: <strong className="text-slate-700">{scannedAsset.locationName}</strong></p>
-                    <p className="text-slate-500 text-[11px]">PIC: <strong className="text-slate-700">{scannedAsset.assignedUserName || 'Umum'}</strong></p>
-                    <p className="text-slate-500 text-[11px]">Kondisi Tercatat: <strong className="text-slate-700">{scannedAsset.condition}</strong></p>
+                    <div className="grid grid-cols-2 gap-1.5 text-[11px] pt-1">
+                      <p className="text-slate-500">Lokasi: <strong className="text-slate-700">{scannedAsset.location}</strong></p>
+                      <p className="text-slate-500">PIC: <strong className="text-slate-700">{scannedAsset.assignedTo || 'Belum Ditugaskan'}</strong></p>
+                      <p className="text-slate-500">Kondisi Saat Ini: <strong className="text-amber-600">{scannedAsset.condition}</strong></p>
+                      <p className="text-slate-500">Status Saat Ini: <strong className="text-blue-600">{scannedAsset.status}</strong></p>
+                    </div>
                   </div>
 
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1.5">
-                      Kondisi Fisik Hasil Pengecekan Lapangan:
+                      1. Ubah Kondisi Fisik (Hasil Pemeriksaan):
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {(['Baik', 'Perbaikan', 'Rusak'] as AssetCondition[]).map((c) => (
                         <button
                           type="button"
                           key={c}
-                          onClick={() => setVerifiedCondition(c)}
+                          onClick={() => handleConditionChange(c)}
                           className={`py-2 px-3 rounded-lg border text-xs font-bold transition-all ${
                             verifiedCondition === c
                               ? c === 'Baik'
@@ -350,8 +369,34 @@ export default function StockOpnamePage() {
                   </div>
 
                   <div>
+                    <label className="block font-semibold text-slate-700 mb-1.5">
+                      2. Status Operasional (Otomatis / Sesuaikan):
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['Aktif', 'Dalam Perbaikan', 'Tidak Aktif'] as AssetStatus[]).map((s) => (
+                        <button
+                          type="button"
+                          key={s}
+                          onClick={() => setVerifiedStatus(s)}
+                          className={`py-1.5 px-2.5 rounded-lg border text-[11px] font-bold transition-all ${
+                            verifiedStatus === s
+                              ? s === 'Aktif'
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                                : s === 'Dalam Perbaikan'
+                                ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                                : 'bg-slate-700 text-white border-slate-700 shadow-xs'
+                              : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      Catatan Audit (Opsional):
+                      3. Catatan Audit Lapangan (Opsional):
                     </label>
                     <textarea
                       rows={2}
