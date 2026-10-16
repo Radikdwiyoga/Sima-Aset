@@ -33,33 +33,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       }
     } else {
-      // Default to Super Admin so that dev reload still works smoothly,
-      // but logout can clear it to test real login page
-      const defaultUser: User = {
-        id: 'usr-1',
-        name: 'Super Admin SIMA',
-        username: 'admin',
-        email: 'admin@sima.com',
-        role: 'super_admin',
-        department: 'Administrator Aset',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
-      };
-      setUser(defaultUser);
-      localStorage.setItem('sima_user', JSON.stringify(defaultUser));
+      setUser(null);
     }
     setIsLoading(false);
   }, []);
 
   const login = async (identifier: string, password?: string, roleOverride?: UserRole): Promise<{ success: boolean; message?: string }> => {
     try {
-      const found = DataService.login(identifier);
+      let found = DataService.login(identifier);
+      
+      // If roleOverride is specified, create or customize the profile for demo testing
+      if (!found && roleOverride) {
+        found = {
+          id: `usr-demo-${roleOverride}`,
+          name: roleOverride === 'super_admin' ? 'Super Admin SIMA' : roleOverride === 'admin_it' ? 'Andi (Admin Aset)' : roleOverride === 'auditor' ? 'Rina (Auditor SIMA)' : 'Budi (Staff Operasional)',
+          username: identifier.split('@')[0],
+          email: identifier,
+          role: roleOverride,
+          department: roleOverride === 'super_admin' ? 'Administrator' : roleOverride === 'admin_it' ? 'Teknisi Aset' : roleOverride === 'auditor' ? 'Audit & Kepatuhan' : 'Divisi Operasional',
+          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
+        };
+      }
+
       if (found) {
         const loggedUser: User = roleOverride ? { ...found, role: roleOverride } : found;
         setUser(loggedUser);
         localStorage.setItem('sima_user', JSON.stringify(loggedUser));
         return { success: true };
       }
-      return { success: false, message: 'Username tidak ditemukan (Gunakan: admin, budi, siti, andi, rina)' };
+      return { success: false, message: 'Username / Email tidak ditemukan. Gunakan tombol Uji Coba Demo di bawah atau email demo.' };
     } catch (err) {
       return { success: false, message: 'Gagal melakukan login' };
     }

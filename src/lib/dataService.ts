@@ -256,12 +256,71 @@ export const DataService = {
     const inactiveAssets = assets.filter((a) => a.status === 'Tidak Aktif').length;
     const totalValue = assets.reduce((sum, a) => sum + (a.purchasePrice || 0), 0);
 
+    // Dynamic Category Distribution
+    const categoryCountMap: { [cat: string]: number } = {};
+    assets.forEach((a) => {
+      const cat = a.category || 'Lainnya';
+      categoryCountMap[cat] = (categoryCountMap[cat] || 0) + 1;
+    });
+
+    const categoryColorPalette = [
+      '#3B82F6', // Blue
+      '#10B981', // Emerald
+      '#06B6D4', // Cyan
+      '#F59E0B', // Amber
+      '#EC4899', // Pink
+      '#8B5CF6', // Purple
+      '#6366F1', // Indigo
+      '#14B8A6', // Teal
+      '#F97316', // Orange
+    ];
+
+    const categoryDistribution = Object.entries(categoryCountMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count], index) => ({
+        name,
+        count,
+        percentage: totalAssets > 0 ? Math.round((count / totalAssets) * 100) : 0,
+        color: categoryColorPalette[index % categoryColorPalette.length],
+      }));
+
+    // Dynamic Location Distribution
+    const locationCountMap: { [loc: string]: number } = {};
+    assets.forEach((a) => {
+      const loc = a.location || 'Lainnya';
+      locationCountMap[loc] = (locationCountMap[loc] || 0) + 1;
+    });
+
+    const locationColorPalette = [
+      '#60A5FA', // Blue
+      '#34D399', // Emerald
+      '#FBBF24', // Amber
+      '#F87171', // Red
+      '#C084FC', // Purple
+      '#38BDF8', // Sky
+      '#A78BFA', // Violet
+    ];
+
+    const locationDistribution = Object.entries(locationCountMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count], index) => ({
+        name,
+        count,
+        fill: locationColorPalette[index % locationColorPalette.length],
+      }));
+
     return {
       totalAssets,
       activeAssets,
       maintenanceAssets,
       inactiveAssets,
       totalValue,
+      categoryDistribution: categoryDistribution.length > 0 ? categoryDistribution : [
+        { name: 'Belum Ada Data', count: 0, percentage: 0, color: '#94A3B8' }
+      ],
+      locationDistribution: locationDistribution.length > 0 ? locationDistribution : [
+        { name: 'Belum Ada Data', count: 0, fill: '#94A3B8' }
+      ],
       categories: initialDb.categories,
       locations: initialDb.locations,
       recentActivities: initialDb.histories,

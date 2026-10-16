@@ -38,6 +38,7 @@ export function getRolePermissions(role?: UserRole): RolePermissions {
         canRequestLoan: true
       };
 
+    case 'auditor':
     case 'management':
       return {
         canCreateAsset: false,
@@ -73,6 +74,8 @@ export function getRoleDisplayName(role?: UserRole): string {
       return 'Admin IT (Hardware & Software)';
     case 'admin_ga':
       return 'Admin GA (Fasilitas & Aset Umum)';
+    case 'auditor':
+      return 'Auditor / Pengawas (Audit & Laporan)';
     case 'management':
       return 'Manajemen (Laporan & Audit)';
     case 'staff':

@@ -215,52 +215,99 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Quick Demo Role Switcher for Pair Testing */}
+            {/* Quick Demo Role Switcher for 1-Click Login */}
             <div className="mt-8 pt-6 border-t border-slate-200">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-3">
-                Uji Coba Hak Akses Cepat (Demo RBAC)
-              </span>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-blue-600" />
+                  <span>Pilihan Demo Login Cepat (1-Click per Role)</span>
+                </span>
+                <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                  Tanpa Ketik Sandi
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mb-3.5">
+                Pilih salah satu peran di bawah untuk langsung menguji antarmuka dan batasan hak akses sesuai kebutuhan:
+              </p>
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* 1. Super Admin */}
                 <button
                   type="button"
                   onClick={() => handleQuickRole('super_admin', 'admin@sima.com')}
-                  className="p-3 bg-blue-50/80 hover:bg-blue-100/80 border border-blue-200/80 rounded-xl text-left transition-all group"
+                  className="p-3 bg-blue-50/70 hover:bg-blue-100 border border-blue-200 rounded-xl text-left transition-all group cursor-pointer shadow-2xs hover:shadow-xs"
                 >
-                  <div className="flex items-center gap-1.5 text-blue-700 font-bold text-xs mb-1">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Super Admin</span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-blue-700 font-bold text-xs flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                      Super Admin
+                    </span>
+                    <span className="text-[10px] font-mono text-blue-500 bg-blue-100/80 px-1.5 py-0.2 rounded">
+                      admin@sima.com
+                    </span>
                   </div>
                   <p className="text-[11px] text-slate-600 leading-tight">
-                    Akses penuh semua modul & kelola user
+                    Akses 100% penuh: Tambah/Edit/Hapus, Import Excel, Opname & Kelola User.
                   </p>
                 </button>
 
+                {/* 2. Admin Aset */}
                 <button
                   type="button"
                   onClick={() => handleQuickRole('admin_it', 'andi@company.com')}
-                  className="p-3 bg-indigo-50/80 hover:bg-indigo-100/80 border border-indigo-200/80 rounded-xl text-left transition-all group"
+                  className="p-3 bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-left transition-all group cursor-pointer shadow-2xs hover:shadow-xs"
                 >
-                  <div className="flex items-center gap-1.5 text-indigo-700 font-bold text-xs mb-1">
-                    <UserCircle2 className="w-3.5 h-3.5" />
-                    <span>Admin Aset</span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-emerald-800 font-bold text-xs flex items-center gap-1">
+                      <UserCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      Admin Aset
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-600 bg-emerald-100/80 px-1.5 py-0.2 rounded">
+                      andi@company.com
+                    </span>
                   </div>
                   <p className="text-[11px] text-slate-600 leading-tight">
-                    Kelola & mutasi aset (tanpa kelola user)
+                    Operasional inventaris: Tambah aset, Scan QR, Opname, Peminjaman.
                   </p>
                 </button>
 
+                {/* 3. Staff / Pemohon */}
                 <button
                   type="button"
                   onClick={() => handleQuickRole('staff', 'budi@company.com')}
-                  className="p-3 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl text-left transition-all group"
+                  className="p-3 bg-amber-50/70 hover:bg-amber-100 border border-amber-200 rounded-xl text-left transition-all group cursor-pointer shadow-2xs hover:shadow-xs"
                 >
-                  <div className="flex items-center gap-1.5 text-slate-700 font-bold text-xs mb-1">
-                    <UserCircle2 className="w-3.5 h-3.5" />
-                    <span>Staff / Pemohon</span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-amber-800 font-bold text-xs flex items-center gap-1">
+                      <UserCircle2 className="w-3.5 h-3.5 text-amber-600" />
+                      Staff / Pemohon
+                    </span>
+                    <span className="text-[10px] font-mono text-amber-600 bg-amber-100/80 px-1.5 py-0.2 rounded">
+                      budi@company.com
+                    </span>
                   </div>
                   <p className="text-[11px] text-slate-600 leading-tight">
-                    Hanya lihat aset & pinjam (dilarang edit/tambah)
+                    Akses terbatas: Hanya lihat data & ajukan pinjam (dilarang tambah/edit).
+                  </p>
+                </button>
+
+                {/* 4. Auditor / Manajemen */}
+                <button
+                  type="button"
+                  onClick={() => handleQuickRole('auditor', 'rina@company.com')}
+                  className="p-3 bg-purple-50/70 hover:bg-purple-100 border border-purple-200 rounded-xl text-left transition-all group cursor-pointer shadow-2xs hover:shadow-xs"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-purple-800 font-bold text-xs flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
+                      Auditor / Pengawas
+                    </span>
+                    <span className="text-[10px] font-mono text-purple-600 bg-purple-100/80 px-1.5 py-0.2 rounded">
+                      rina@company.com
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 leading-tight">
+                    Pengawasan: Stock opname berkala, audit kondisi & cetak laporan analitik.
                   </p>
                 </button>
               </div>

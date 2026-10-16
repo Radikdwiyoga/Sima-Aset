@@ -55,6 +55,8 @@ export default function DashboardPage() {
           inactivePercent: `${((stats.inactiveAssets / (stats.totalAssets || 1)) * 100).toFixed(1)}% dari total`,
           repairPercent: `${((stats.maintenanceAssets / (stats.totalAssets || 1)) * 100).toFixed(1)}% dari total`,
         },
+        categoryDistribution: stats.categoryDistribution,
+        locationDistribution: stats.locationDistribution,
         categories: stats.categories,
         locations: stats.locations,
         recentActivities: stats.recentActivities,
@@ -67,32 +69,18 @@ export default function DashboardPage() {
   }, []);
 
   const metrics = data?.metrics || {
-    total: 1248,
-    active: 1102,
-    inactive: 98,
-    repair: 48,
-    totalGrowth: '+12% dari bulan lalu',
-    activePercent: '88.3% dari total',
-    inactivePercent: '7.9% dari total',
-    repairPercent: '3.8% dari total'
+    total: 0,
+    active: 0,
+    inactive: 0,
+    repair: 0,
+    totalGrowth: '0% dari bulan lalu',
+    activePercent: '0% dari total',
+    inactivePercent: '0% dari total',
+    repairPercent: '0% dari total'
   };
 
-  const categoryDistribution = data?.categoryDistribution || [
-    { name: 'Perangkat IT', percentage: 35, count: 436, color: '#3B82F6' },
-    { name: 'Furniture', percentage: 20, count: 250, color: '#10B981' },
-    { name: 'Kendaraan', percentage: 15, count: 187, color: '#06B6D4' },
-    { name: 'Elektronik', percentage: 12, count: 150, color: '#F59E0B' },
-    { name: 'Mesin & Peralatan', percentage: 10, count: 125, color: '#EC4899' },
-    { name: 'Lainnya', percentage: 8, count: 100, color: '#8B5CF6' }
-  ];
-
-  const locationDistribution = data?.locationDistribution || [
-    { name: 'Kantor Pusat', count: 420, fill: '#60A5FA' },
-    { name: 'Cabang A', count: 280, fill: '#34D399' },
-    { name: 'Cabang B', count: 210, fill: '#FBBF24' },
-    { name: 'Gudang', count: 180, fill: '#F87171' },
-    { name: 'Lainnya', count: 158, fill: '#C084FC' }
-  ];
+  const categoryDistribution = data?.categoryDistribution || [];
+  const locationDistribution = data?.locationDistribution || [];
 
   const recentActivities = [
     {
@@ -314,7 +302,7 @@ export default function DashboardPage() {
                 </p>
               </div>
               <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">
-                6 Kategori
+                {categoryDistribution.length} Kategori
               </span>
             </div>
 
@@ -350,7 +338,7 @@ export default function DashboardPage() {
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-2xl font-black text-slate-900 leading-none">
-                    1.248
+                    {metrics.total.toLocaleString('id-ID')}
                   </span>
                   <span className="text-xs text-slate-500 font-semibold mt-1">
                     Total Unit
