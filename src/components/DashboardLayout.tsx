@@ -35,7 +35,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex bg-[#F8FAFC] text-slate-800 antialiased">
       {/* Desktop Sidebar */}
-      <div className="hidden md:block">
+      <div className="hidden md:block shrink-0 sticky top-0 h-screen z-30">
         <Sidebar />
       </div>
 

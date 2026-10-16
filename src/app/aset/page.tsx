@@ -19,12 +19,14 @@ import {
   FileSpreadsheet,
   Lock,
   Printer,
-  ChevronDown
+  ChevronDown,
+  Upload
 } from 'lucide-react';
 import { Asset, AssetStatus } from '@/types';
 import { exportAssetsToExcel, exportAssetsToPDF } from '@/lib/export';
 import { useAuth } from '@/context/AuthContext';
 import { DataService } from '@/lib/dataService';
+import { ImportExcelModal } from '@/components/ImportExcelModal';
 
 export default function AsetPage() {
   const router = useRouter();
@@ -32,6 +34,8 @@ export default function AsetPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importAlert, setImportAlert] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'Semua' | 'Aktif' | 'Tidak Aktif' | 'Dalam Perbaikan'>('Semua');
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
@@ -125,6 +129,19 @@ export default function AsetPage() {
               )}
             </div>
 
+            {/* Import Excel Button */}
+            {canCreate && (
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(true)}
+                className="px-4 py-2.5 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-800 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-xs cursor-pointer"
+                title="Migrasi data aset massal dari file Excel / CSV"
+              >
+                <Upload className="w-4 h-4 text-emerald-600" />
+                <span>Import Excel</span>
+              </button>
+            )}
+
             {canCreate ? (
               <Link
                 href="/aset/tambah"
@@ -144,6 +161,22 @@ export default function AsetPage() {
             )}
           </div>
         </div>
+
+        {/* Alert Notification */}
+        {importAlert && (
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-emerald-800 text-sm font-medium animate-in fade-in">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>{importAlert}</span>
+            </div>
+            <button
+              onClick={() => setImportAlert(null)}
+              className="text-xs font-bold text-emerald-700 hover:text-emerald-900 underline ml-4 cursor-pointer"
+            >
+              Tutup
+            </button>
+          </div>
+        )}
 
         {/* Status Tabs (Matching Screen 2) */}
         <div className="flex items-center gap-3 border-b border-slate-200 overflow-x-auto">
@@ -364,6 +397,15 @@ export default function AsetPage() {
           </div>
         </div>
       </div>
+
+      <ImportExcelModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={(count) => {
+          fetchAssets();
+          setImportAlert(`Berhasil mengimpor ${count} aset baru dari file Excel / CSV!`);
+        }}
+      />
     </DashboardLayout>
   );
 }

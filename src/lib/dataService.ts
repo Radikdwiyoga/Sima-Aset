@@ -148,6 +148,42 @@ export const DataService = {
     return newAsset;
   },
 
+  batchCreateAssets(items: Partial<Asset>[]): Asset[] {
+    const assets = getStoredAssets();
+    const createdList: Asset[] = [];
+
+    items.forEach((data, index) => {
+      const newId = `ast-${Date.now()}-${index}`;
+      const newAsset: Asset = {
+        id: newId,
+        assetTag: data.assetTag || `AST-${Date.now().toString().slice(-4)}-${index + 1}`,
+        name: data.name || 'Aset Import',
+        category: data.category || 'Perangkat IT',
+        categorySlug: data.categorySlug || 'it',
+        location: data.location || 'Kantor Pusat',
+        locationId: data.locationId || 'loc-1',
+        purchaseDate: data.purchaseDate || new Date().toISOString().split('T')[0],
+        purchasePrice: Number(data.purchasePrice) || 0,
+        condition: data.condition || 'Baik',
+        status: data.status || 'Aktif',
+        brand: data.brand || '',
+        model: data.model || '',
+        serialNumber: data.serialNumber || '',
+        specification: data.specification || '',
+        assignedTo: data.assignedTo || '',
+        notes: data.notes || 'Hasil Migrasi Data Excel',
+        image: data.image || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      createdList.push(newAsset);
+    });
+
+    const merged = [...createdList, ...assets];
+    saveStoredAssets(merged);
+    return createdList;
+  },
+
   updateAsset(id: string, updates: Partial<Asset>): Asset | undefined {
     const assets = getStoredAssets();
     const index = assets.findIndex((a) => a.id === id || a.assetTag.toLowerCase() === id.toLowerCase());
