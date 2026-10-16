@@ -232,10 +232,28 @@ export const DataService = {
     };
   },
 
-  login(username: string): User | null {
+  login(identifier: string): User | null {
     const users = getStoredUsers();
-    const found = users.find((u) => u.username.toLowerCase() === username.toLowerCase());
-    return found || null;
+    const cleanId = (identifier || '').trim().toLowerCase();
+    const usernamePart = cleanId.split('@')[0];
+
+    // Find by exact username, exact email, or username part
+    const found = users.find(
+      (u) =>
+        u.username.toLowerCase() === cleanId ||
+        u.email.toLowerCase() === cleanId ||
+        u.username.toLowerCase() === usernamePart ||
+        cleanId.startsWith(u.username.toLowerCase())
+    );
+
+    if (found) return found;
+
+    // Fallback if user types 'admin' or admin email
+    if (cleanId.includes('admin')) {
+      return users.find((u) => u.role === 'super_admin') || users[0];
+    }
+
+    return null;
   },
 };
 
