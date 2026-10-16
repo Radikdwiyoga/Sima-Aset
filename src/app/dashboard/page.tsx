@@ -33,6 +33,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { getRoleDisplayName } from '@/lib/permissions';
 import { DashboardQRScannerModal } from '@/components/DashboardQRScannerModal';
+import { DataService } from '@/lib/dataService';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -41,14 +42,28 @@ export default function DashboardPage() {
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
 
   useEffect(() => {
-    fetch('/api/dashboard')
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success) {
-          setData(json.data);
-        }
-      })
-      .finally(() => setLoading(false));
+    try {
+      const stats = DataService.getDashboardStats();
+      setData({
+        metrics: {
+          total: stats.totalAssets,
+          active: stats.activeAssets,
+          inactive: stats.inactiveAssets,
+          repair: stats.maintenanceAssets,
+          totalGrowth: '+12% dari bulan lalu',
+          activePercent: `${((stats.activeAssets / (stats.totalAssets || 1)) * 100).toFixed(1)}% dari total`,
+          inactivePercent: `${((stats.inactiveAssets / (stats.totalAssets || 1)) * 100).toFixed(1)}% dari total`,
+          repairPercent: `${((stats.maintenanceAssets / (stats.totalAssets || 1)) * 100).toFixed(1)}% dari total`,
+        },
+        categories: stats.categories,
+        locations: stats.locations,
+        recentActivities: stats.recentActivities,
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const metrics = data?.metrics || {

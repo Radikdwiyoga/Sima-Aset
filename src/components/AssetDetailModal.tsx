@@ -16,6 +16,7 @@ import {
   Tag
 } from 'lucide-react';
 import { Asset, AssetCondition, AssetStatus } from '@/types';
+import { DataService } from '@/lib/dataService';
 
 interface AssetDetailModalProps {
   asset: Asset | null;
@@ -58,22 +59,15 @@ export function AssetDetailModal({
   const handleSave = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/assets/${asset.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          locationName,
-          assignedUserName: assignedUserName || null,
-          condition,
-          status
-        })
+      DataService.updateAsset(asset.id, {
+        name,
+        location: locationName,
+        assignedTo: assignedUserName || undefined,
+        condition,
+        status,
       });
-      const data = await res.json();
-      if (data.success) {
-        setIsEditing(false);
-        onUpdated();
-      }
+      setIsEditing(false);
+      onUpdated();
     } catch (e) {
       console.error(e);
     } finally {

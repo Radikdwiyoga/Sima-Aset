@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Asset } from '@/types';
 import { useAuth } from '@/context/AuthContext';
+import { DataService } from '@/lib/dataService';
 
 interface CreateLoanModalProps {
   isOpen: boolean;
@@ -42,18 +43,11 @@ export function CreateLoanModal({ isOpen, onClose, onSuccess }: CreateLoanModalP
 
   useEffect(() => {
     if (isOpen) {
-      // Fetch available assets
-      fetch('/api/assets')
-        .then(r => r.json())
-        .then(json => {
-          if (json.success && json.data) {
-            setAvailableAssets(json.data);
-            if (json.data.length > 0) {
-              setSelectedAssetId(json.data[0].id);
-            }
-          }
-        })
-        .catch(console.error);
+      const data = DataService.getAssets();
+      setAvailableAssets(data);
+      if (data.length > 0 && !selectedAssetId) {
+        setSelectedAssetId(data[0].id);
+      }
 
       if (user) {
         setBorrowerName(user.name);
@@ -93,32 +87,22 @@ export function CreateLoanModal({ isOpen, onClose, onSuccess }: CreateLoanModalP
     const targetAsset = availableAssets.find(a => a.id === selectedAssetId);
 
     try {
-      const res = await fetch('/api/loans', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          assetId: selectedAssetId,
-          assetTag: targetAsset?.assetTag || 'AST-000',
-          assetName: targetAsset?.name || 'Aset Kantor',
-          borrowerName,
-          borrowerDept,
-          borrowDate,
-          expectedReturnDate,
-          purpose,
-          documentName: uploadedFile ? uploadedFile.name : 'Formulir_Peminjaman_Internal.pdf',
-          notes
-        })
+      DataService.createLoan({
+        assetId: selectedAssetId,
+        assetTag: targetAsset?.assetTag || 'AST-000',
+        assetName: targetAsset?.name || 'Aset Kantor',
+        borrowerName,
+        borrowerDept,
+        borrowDate,
+        expectedReturnDate,
+        purpose,
+        documentName: uploadedFile ? uploadedFile.name : 'Formulir_Peminjaman_Internal.pdf',
+        notes
       });
-
-      const json = await res.json();
-      if (json.success) {
-        onSuccess();
-        onClose();
-      } else {
-        setError(json.message || 'Gagal menyimpan peminjaman.');
-      }
+      onSuccess();
+      onClose();
     } catch (err) {
-      setError('Terjadi kesalahan jaringan.');
+      setError('Terjadi kesalahan saat menyimpan peminjaman.');
     } finally {
       setLoading(false);
     }

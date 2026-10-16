@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { X, Printer, Download, Boxes } from 'lucide-react';
 import { Asset } from '@/types';
+import QRCode from 'qrcode';
 
 interface QRModalProps {
   asset: Asset | null;
@@ -17,13 +18,11 @@ export function QRModal({ asset, isOpen, onClose }: QRModalProps) {
   useEffect(() => {
     if (asset && isOpen) {
       setLoading(true);
-      fetch(`/api/qrcode?text=${encodeURIComponent(asset.assetTag)}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.qrDataUrl) {
-            setQrUrl(data.qrDataUrl);
-          }
+      QRCode.toDataURL(asset.assetTag, { width: 300, margin: 2 })
+        .then((url) => {
+          setQrUrl(url);
         })
+        .catch((err) => console.error(err))
         .finally(() => setLoading(false));
     }
   }, [asset, isOpen]);

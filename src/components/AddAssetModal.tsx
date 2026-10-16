@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, Plus, Check } from 'lucide-react';
 import { CategorySlug, AssetCondition, AssetStatus } from '@/types';
+import { DataService } from '@/lib/dataService';
 
 interface AddAssetModalProps {
   isOpen: boolean;
@@ -77,35 +78,25 @@ export function AddAssetModal({
     }
 
     try {
-      const res = await fetch('/api/assets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          assetTag: finalTag,
-          name,
-          categorySlug: category,
-          locationId: 'loc-1',
-          locationName,
-          assignedUserName: assignedUserName || null,
-          brand,
-          purchaseDate: new Date().toISOString().split('T')[0],
-          purchasePrice: Number(purchasePrice) || 0,
-          condition,
-          status,
-          quantity: Number(quantity) || 1,
-          specificAttributes
-        })
+      DataService.createAsset({
+        assetTag: finalTag,
+        name,
+        categorySlug: category,
+        category: category === 'it' ? 'Perangkat IT' : category === 'elektronik' ? 'Elektronik' : category === 'furnitur' ? 'Furniture' : 'Rumah Tangga',
+        locationId: 'loc-1',
+        location: locationName,
+        assignedTo: assignedUserName || undefined,
+        brand,
+        purchaseDate: new Date().toISOString().split('T')[0],
+        purchasePrice: Number(purchasePrice) || 0,
+        condition,
+        status,
       });
 
-      const data = await res.json();
-      if (data.success) {
-        onSuccess();
-        onClose();
-      } else {
-        setError(data.message || 'Gagal menyimpan aset.');
-      }
+      onSuccess();
+      onClose();
     } catch (err) {
-      setError('Terjadi kesalahan jaringan.');
+      setError('Terjadi kesalahan saat menyimpan aset.');
     } finally {
       setLoading(false);
     }

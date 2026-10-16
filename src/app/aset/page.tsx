@@ -24,6 +24,7 @@ import {
 import { Asset, AssetStatus } from '@/types';
 import { exportAssetsToExcel, exportAssetsToPDF } from '@/lib/export';
 import { useAuth } from '@/context/AuthContext';
+import { DataService } from '@/lib/dataService';
 
 export default function AsetPage() {
   const router = useRouter();
@@ -39,24 +40,16 @@ export default function AsetPage() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(1248);
 
-  const fetchAssets = async () => {
+  const fetchAssets = () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (activeTab !== 'Semua') {
-        params.append('status', activeTab);
-      } else if (selectedStatus !== 'Semua') {
-        params.append('status', selectedStatus);
-      }
-      if (selectedCategory !== 'Semua') params.append('category', selectedCategory);
-      if (selectedLocation !== 'Semua') params.append('location', selectedLocation);
-      if (search) params.append('search', search);
-
-      const res = await fetch(`/api/assets?${params.toString()}`);
-      const json = await res.json();
-      if (json.success) {
-        setAssets(json.data);
-      }
+      const data = DataService.getAssets({
+        status: activeTab !== 'Semua' ? activeTab : selectedStatus,
+        category: selectedCategory,
+        location: selectedLocation,
+        search
+      });
+      setAssets(data);
     } catch (err) {
       console.error(err);
     } finally {

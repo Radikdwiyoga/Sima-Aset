@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Asset, AssetCondition } from '@/types';
 import { Html5Qrcode } from 'html5-qrcode';
+import { DataService } from '@/lib/dataService';
 
 export default function StockOpnamePage() {
   const [assetTagInput, setAssetTagInput] = useState('');
@@ -95,17 +96,23 @@ export default function StockOpnamePage() {
     setFeedbackMessage(null);
 
     try {
-      const res = await fetch(`/api/assets/${encodeURIComponent(tag.trim())}`);
-      const json = await res.json();
-      if (json.success && json.data) {
-        setScannedAsset(json.data);
-        setVerifiedCondition(json.data.condition);
+      const found = DataService.getAssetById(tag.trim());
+      if (found) {
+        setScannedAsset(found);
+        setVerifiedCondition(found.condition);
         setAuditNotes('');
       } else {
-        setFeedbackMessage({
-          type: 'error',
-          text: `Aset dengan kode tag "${tag}" tidak ditemukan dalam sistem.`
-        });
+        const searchList = DataService.getAssets({ search: tag.trim() });
+        if (searchList.length > 0) {
+          setScannedAsset(searchList[0]);
+          setVerifiedCondition(searchList[0].condition);
+          setAuditNotes('');
+        } else {
+          setFeedbackMessage({
+            type: 'error',
+            text: `Aset dengan kode tag "${tag}" tidak ditemukan dalam sistem.`
+          });
+        }
       }
     } catch (e) {
       setFeedbackMessage({ type: 'error', text: 'Gagal mencari aset.' });
@@ -116,24 +123,17 @@ export default function StockOpnamePage() {
     if (!scannedAsset) return;
 
     try {
-      const res = await fetch(`/api/assets/${scannedAsset.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          condition: verifiedCondition
-        })
+      DataService.updateAsset(scannedAsset.id, {
+        condition: verifiedCondition
       });
 
-      const json = await res.json();
-      if (json.success) {
-        setFeedbackMessage({
-          type: 'success',
-          text: `Berhasil memverifikasi aset ${scannedAsset.assetTag} (${scannedAsset.name}) dengan kondisi: ${verifiedCondition}`
-        });
-        setStats(prev => ({ ...prev, verified: prev.verified + 1 }));
-        setScannedAsset(null);
-        setAssetTagInput('');
-      }
+      setFeedbackMessage({
+        type: 'success',
+        text: `Berhasil memverifikasi aset ${scannedAsset.assetTag} (${scannedAsset.name}) dengan kondisi: ${verifiedCondition}`
+      });
+      setStats(prev => ({ ...prev, verified: prev.verified + 1 }));
+      setScannedAsset(null);
+      setAssetTagInput('');
     } catch (e) {
       setFeedbackMessage({ type: 'error', text: 'Gagal memverifikasi aset.' });
     }

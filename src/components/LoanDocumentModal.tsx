@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { X, Printer, FileText, CheckCircle2, ShieldCheck, Download } from 'lucide-react';
-import { AssetLoan } from '@/app/api/loans/route';
+import { AssetLoan } from '@/lib/dataService';
 
 interface LoanDocumentModalProps {
   loan: AssetLoan | null;

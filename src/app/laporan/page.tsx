@@ -15,21 +15,19 @@ import {
   BarChart3
 } from 'lucide-react';
 import { exportAssetsToExcel, exportAssetsToPDF } from '@/lib/export';
+import { DataService } from '@/lib/dataService';
 
 export default function LaporanPage() {
   const [loading, setLoading] = useState(false);
 
-  const handleExport = async (type: string, format: 'excel' | 'pdf', title: string) => {
+  const handleExport = (type: string, format: 'excel' | 'pdf', title: string) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/assets');
-      const json = await res.json();
-      if (json.success && json.data) {
-        if (format === 'excel') {
-          exportAssetsToExcel(json.data, `Laporan_${type}_SIMA_${new Date().toISOString().split('T')[0]}.csv`);
-        } else {
-          exportAssetsToPDF(json.data, title);
-        }
+      const data = DataService.getAssets();
+      if (format === 'excel') {
+        exportAssetsToExcel(data, `Laporan_${type}_SIMA_${new Date().toISOString().split('T')[0]}.csv`);
+      } else {
+        exportAssetsToPDF(data, title);
       }
     } catch (e) {
       console.error(e);

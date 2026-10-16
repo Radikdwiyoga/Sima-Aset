@@ -19,6 +19,7 @@ import {
 import Link from 'next/link';
 import { Asset } from '@/types';
 import { Html5Qrcode } from 'html5-qrcode';
+import { DataService } from '@/lib/dataService';
 
 interface DashboardQRScannerModalProps {
   isOpen: boolean;
@@ -111,22 +112,19 @@ export function DashboardQRScannerModal({ isOpen, onClose }: DashboardQRScannerM
     setScannedAsset(null);
 
     try {
-      const res = await fetch(`/api/assets/${encodeURIComponent(tag.trim())}`);
-      const json = await res.json();
-      if (json.success && json.data) {
-        setScannedAsset(json.data);
+      const found = DataService.getAssetById(tag.trim());
+      if (found) {
+        setScannedAsset(found);
       } else {
-        // Try searching in list by tag
-        const listRes = await fetch(`/api/assets?search=${encodeURIComponent(tag.trim())}`);
-        const listJson = await listRes.json();
-        if (listJson.success && listJson.data && listJson.data.length > 0) {
-          setScannedAsset(listJson.data[0]);
+        const searchList = DataService.getAssets({ search: tag.trim() });
+        if (searchList.length > 0) {
+          setScannedAsset(searchList[0]);
         } else {
           setError(`Aset dengan kode tag "${tag}" tidak ditemukan.`);
         }
       }
     } catch (err) {
-      setError('Gagal menghubungkan ke server.');
+      setError('Gagal mencari data aset.');
     } finally {
       setLoading(false);
     }

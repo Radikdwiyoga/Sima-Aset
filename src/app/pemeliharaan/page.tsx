@@ -28,14 +28,8 @@ export default function PemeliharaanPage() {
   const [notes, setNotes] = useState('');
 
   const fetchLogs = () => {
-    fetch('/api/dashboard')
-      .then((res) => res.json())
-      .then((data) => {
-        // Fetch from database API
-        fetch('/api/assets')
-          .then(() => {
-            // Initial sample logs
-            setLogs([
+    // Initial sample logs
+    setLogs([
               {
                 id: 'mnt-1',
                 assetId: 'ast-elk-1',
@@ -75,10 +69,7 @@ export default function PemeliharaanPage() {
                 notes: 'Pemeriksaan gauge jarum tekanan dan sertifikasi masa pakai APAR',
                 status: 'Terjadwal'
               }
-            ]);
-          });
-      })
-      .finally(() => setLoading(false));
+    ]);
   };
 
   useEffect(() => {

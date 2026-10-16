@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole } from '@/types';
 import { useRouter } from 'next/navigation';
 import { getRolePermissions, RolePermissions } from '@/lib/permissions';
+import { DataService } from '@/lib/dataService';
 
 interface AuthContextType {
   user: User | null;
@@ -51,20 +52,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (identifier: string, password?: string, roleOverride?: UserRole): Promise<{ success: boolean; message?: string }> => {
     try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password, roleOverride })
-      });
-      const data = await res.json();
-      if (data.success && data.user) {
-        setUser(data.user);
-        localStorage.setItem('sima_user', JSON.stringify(data.user));
+      const found = DataService.login(identifier);
+      if (found) {
+        const loggedUser: User = roleOverride ? { ...found, role: roleOverride } : found;
+        setUser(loggedUser);
+        localStorage.setItem('sima_user', JSON.stringify(loggedUser));
         return { success: true };
       }
-      return { success: false, message: data.message || 'Kredensial tidak valid' };
+      return { success: false, message: 'Username tidak ditemukan (Gunakan: admin, budi, siti, andi, rina)' };
     } catch (err) {
-      return { success: false, message: 'Koneksi ke server gagal' };
+      return { success: false, message: 'Gagal melakukan login' };
     }
   };
 

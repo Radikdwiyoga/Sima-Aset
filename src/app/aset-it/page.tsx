@@ -20,6 +20,7 @@ import { QRModal } from '@/components/QRModal';
 import { AddAssetModal } from '@/components/AddAssetModal';
 import { AssetDetailModal } from '@/components/AssetDetailModal';
 import { exportAssetsToCSV } from '@/lib/export';
+import { DataService } from '@/lib/dataService';
 
 export default function AsetITPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -34,14 +35,14 @@ export default function AsetITPage() {
 
   const fetchAssets = () => {
     setLoading(true);
-    fetch(`/api/assets?category=it&search=${encodeURIComponent(search)}`)
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success) {
-          setAssets(json.data);
-        }
-      })
-      .finally(() => setLoading(false));
+    try {
+      const data = DataService.getAssets({ category: 'it', search });
+      setAssets(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

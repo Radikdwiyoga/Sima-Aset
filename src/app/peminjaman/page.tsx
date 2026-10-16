@@ -20,7 +20,7 @@ import {
   Check,
   ChevronDown
 } from 'lucide-react';
-import { AssetLoan } from '@/app/api/loans/route';
+import { AssetLoan, DataService } from '@/lib/dataService';
 import { CreateLoanModal } from '@/components/CreateLoanModal';
 import { LoanDocumentModal } from '@/components/LoanDocumentModal';
 import { useAuth } from '@/context/AuthContext';
@@ -37,14 +37,11 @@ export default function PeminjamanPage() {
   const [selectedLoanForDoc, setSelectedLoanForDoc] = useState<AssetLoan | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
 
-  const fetchLoans = async () => {
+  const fetchLoans = () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/loans');
-      const json = await res.json();
-      if (json.success && json.data) {
-        setLoans(json.data);
-      }
+      const data = DataService.getLoans();
+      setLoans(data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -56,21 +53,14 @@ export default function PeminjamanPage() {
     fetchLoans();
   }, []);
 
-  const handleReturnAsset = async (loanId: string) => {
+  const handleReturnAsset = (loanId: string) => {
     if (!confirm('Tandai aset ini sebagai sudah dikembalikan?')) return;
     try {
-      const res = await fetch('/api/loans', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: loanId,
-          status: 'Sudah Dikembalikan'
-        })
+      DataService.updateLoan(loanId, {
+        status: 'Sudah Dikembalikan',
+        actualReturnDate: new Date().toISOString().split('T')[0]
       });
-      const json = await res.json();
-      if (json.success) {
-        fetchLoans();
-      }
+      fetchLoans();
     } catch (e) {
       console.error(e);
     }

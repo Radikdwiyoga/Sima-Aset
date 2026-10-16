@@ -20,6 +20,7 @@ import { QRModal } from '@/components/QRModal';
 import { AddAssetModal } from '@/components/AddAssetModal';
 import { AssetDetailModal } from '@/components/AssetDetailModal';
 import { exportAssetsToCSV } from '@/lib/export';
+import { DataService } from '@/lib/dataService';
 
 export default function FurniturPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -35,14 +36,14 @@ export default function FurniturPage() {
 
   const fetchAssets = () => {
     setLoading(true);
-    fetch(`/api/assets?category=furnitur&search=${encodeURIComponent(search)}`)
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success) {
-          setAssets(json.data);
-        }
-      })
-      .finally(() => setLoading(false));
+    try {
+      const data = DataService.getAssets({ category: 'furniture', search });
+      setAssets(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -50,27 +51,12 @@ export default function FurniturPage() {
   }, [search]);
 
   // Handle live +/- quantity update
-  const handleUpdateQuantity = async (id: string, delta: number) => {
-    // Optimistic UI update
-    setAssets((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          const newQty = Math.max(0, (item.quantity || 1) + delta);
-          return { ...item, quantity: newQty };
-        }
-        return item;
-      })
-    );
-
-    try {
-      await fetch(`/api/assets/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deltaQuantity: delta })
-      });
-    } catch (e) {
-      fetchAssets();
-    }
+  const handleUpdateQuantity = (id: string, delta: number) => {
+    const item = assets.find((a) => a.id === id);
+    if (!item) return;
+    const newQty = Math.max(0, (item.quantity || 1) + delta);
+    DataService.updateAsset(id, { quantity: newQty });
+    fetchAssets();
   };
 
   return (
