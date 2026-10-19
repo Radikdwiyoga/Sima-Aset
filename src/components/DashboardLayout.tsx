@@ -33,7 +33,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex bg-[#F8FAFC] text-slate-800 antialiased">
+    <div className="min-h-screen w-full flex bg-[#F8FAFC] text-slate-800 antialiased overflow-x-hidden">
       {/* Desktop Sidebar */}
       <div className="hidden md:block shrink-0 sticky top-0 h-screen z-30">
         <Sidebar />
@@ -56,9 +56,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
         <Navbar onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
-        <main className="flex-1 p-5 sm:p-7 lg:p-8 w-full max-w-[1600px] mx-auto">
+        <main className="flex-1 p-3.5 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto box-border">
           {children}
         </main>
       </div>

@@ -9,7 +9,6 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Table, 
-  Layers, 
   ArrowRight,
   RefreshCw,
   FileCheck
@@ -27,7 +26,6 @@ interface ImportExcelModalProps {
 export function ImportExcelModal({ isOpen, onClose, onSuccess }: ImportExcelModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<Partial<Asset>[]>([]);
-  const [columns, setColumns] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successCount, setSuccessCount] = useState<number | null>(null);
@@ -70,7 +68,7 @@ export function ImportExcelModal({ isOpen, onClose, onSuccess }: ImportExcelModa
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
-        const rawJson: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        const rawJson: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
         if (rawJson.length === 0) {
           setError('File Excel/CSV kosong atau format tidak terbaca.');
@@ -80,7 +78,6 @@ export function ImportExcelModal({ isOpen, onClose, onSuccess }: ImportExcelModa
 
         // Detect columns from first row
         const detectedCols = Object.keys(rawJson[0]);
-        setColumns(detectedCols);
 
         // Map columns to Asset model
         const mappedAssets: Partial<Asset>[] = rawJson.map((row, idx) => {
@@ -132,8 +129,9 @@ export function ImportExcelModal({ isOpen, onClose, onSuccess }: ImportExcelModa
         });
 
         setParsedData(mappedAssets);
-      } catch (err: any) {
-        setError('Gagal membaca file Excel/CSV: ' + (err.message || 'Format tidak didukung'));
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Format tidak didukung';
+        setError('Gagal membaca file Excel/CSV: ' + errorMsg);
       } finally {
         setLoading(false);
       }
@@ -208,8 +206,9 @@ export function ImportExcelModal({ isOpen, onClose, onSuccess }: ImportExcelModa
         onSuccess(created.length);
         onClose();
       }, 1200);
-    } catch (err: any) {
-      setError('Gagal memproses migrasi data: ' + err.message);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Kesalahan internal';
+      setError('Gagal memproses migrasi data: ' + msg);
     } finally {
       setLoading(false);
     }

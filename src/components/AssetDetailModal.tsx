@@ -11,12 +11,11 @@ import {
   Calendar, 
   MapPin, 
   User, 
-  DollarSign, 
-  ShieldCheck,
-  Tag
+  TrendingDown
 } from 'lucide-react';
 import { Asset, AssetCondition, AssetStatus } from '@/types';
 import { DataService } from '@/lib/dataService';
+import { calculateAssetDepreciation } from '@/lib/depreciation';
 
 interface AssetDetailModalProps {
   asset: Asset | null;
@@ -253,12 +252,54 @@ export function AssetDetailModal({
                   </div>
                 </div>
 
+                {/* Depreciation & Valuation (Straight-Line) */}
+                {(() => {
+                  const dep = calculateAssetDepreciation(asset);
+                  return (
+                    <div className="p-4 bg-gradient-to-br from-slate-50 to-blue-50/40 rounded-xl border border-blue-100/80 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <TrendingDown className="w-4 h-4 text-blue-600" />
+                          <span className="text-xs font-bold text-slate-800">
+                            Valuasi Depresiasi (Garis Lurus)
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                          Masa Manfaat: {dep.usefulLifeYears} Tahun
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 pt-1">
+                        <div>
+                          <span className="text-[10px] text-slate-500 font-semibold block">Nilai Buku Saat Ini</span>
+                          <span className="text-sm font-black text-blue-600 block">
+                            Rp {dep.currentBookValue.toLocaleString('id-ID')}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-500 font-semibold block">Akumulasi Penyusutan</span>
+                          <span className="text-xs font-bold text-slate-700 block">
+                            Rp {dep.accumulatedDepreciation.toLocaleString('id-ID')} ({dep.depreciationPercentage}%)
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-blue-600 h-full rounded-full transition-all"
+                          style={{ width: `${dep.depreciationPercentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div className="border border-slate-100 rounded-xl p-4 space-y-3 bg-white">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-blue-600" />
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-bold block">Lokasi Penempatan</span>
-                      <p className="font-semibold text-slate-800 text-xs">{asset.locationName}</p>
+                      <p className="font-semibold text-slate-800 text-xs">{asset.locationName || asset.location || '-'}</p>
                     </div>
                   </div>
 
@@ -266,7 +307,7 @@ export function AssetDetailModal({
                     <User className="w-4 h-4 text-emerald-600" />
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-bold block">Penanggung Jawab (PIC)</span>
-                      <p className="font-semibold text-slate-800 text-xs">{asset.assignedUserName || 'Belum Ditugaskan (Pool Umum)'}</p>
+                      <p className="font-semibold text-slate-800 text-xs">{asset.assignedUserName || asset.assignedTo || 'Belum Ditugaskan (Pool Umum)'}</p>
                     </div>
                   </div>
 
@@ -279,22 +320,33 @@ export function AssetDetailModal({
                   </div>
                 </div>
 
-                {/* Specific Attributes */}
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
-                  <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
-                    Spesifikasi Khusus Kategori {asset.categorySlug.toUpperCase()}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {Object.entries(asset.specificAttributes).map(([key, val]) => (
-                      <div key={key} className="bg-white p-2 rounded-lg border border-slate-200/80">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                          {key.replace(/([A-Z])/g, ' $1')}
-                        </span>
-                        <span className="font-semibold text-slate-800 text-xs">{String(val)}</span>
-                      </div>
-                    ))}
+                {/* Specific Attributes or Technical Specification */}
+                {asset.specificAttributes && Object.keys(asset.specificAttributes).length > 0 ? (
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+                    <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
+                      Spesifikasi Khusus Kategori {asset.categorySlug ? asset.categorySlug.toUpperCase() : ''}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {Object.entries(asset.specificAttributes).map(([key, val]) => (
+                        <div key={key} className="bg-white p-2 rounded-lg border border-slate-200/80">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                            {key.replace(/([A-Z])/g, ' $1')}
+                          </span>
+                          <span className="font-semibold text-slate-800 text-xs">{String(val)}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ) : asset.specification ? (
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+                    <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">
+                      Spesifikasi Teknis
+                    </h4>
+                    <p className="font-semibold text-slate-800 text-xs bg-white p-2.5 rounded-lg border border-slate-200/80">
+                      {asset.specification}
+                    </p>
+                  </div>
+                ) : null}
               </div>
             )}
           </div>

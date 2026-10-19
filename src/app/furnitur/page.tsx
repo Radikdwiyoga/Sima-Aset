@@ -7,12 +7,8 @@ import {
   Plus, 
   QrCode, 
   Printer, 
-  Building2, 
-  Layers, 
   MoreVertical, 
   Minus, 
-  PlusCircle,
-  Armchair,
   Download
 } from 'lucide-react';
 import { Asset } from '@/types';
@@ -61,9 +57,9 @@ export default function FurniturPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 w-full">
         {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">Aset Furnitur</h1>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -71,7 +67,7 @@ export default function FurniturPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
             <button
               onClick={() => exportAssetsToCSV(assets, 'laporan-aset-furnitur.csv')}
               className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
@@ -187,21 +183,27 @@ export default function FurniturPage() {
                         </div>
                       </td>
                       <td className="py-3.5 px-5">
-                        <span className="font-bold text-slate-900 block text-xs">
+                        <span 
+                          onClick={() => {
+                            setSelectedAssetForDetail(item);
+                            setIsDetailModalOpen(true);
+                          }}
+                          className="font-bold text-slate-900 block text-xs cursor-pointer hover:text-blue-600 transition-colors"
+                        >
                           {item.name}
                         </span>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[11px] font-medium text-slate-500">
-                            {item.locationName}
+                            {item.locationName || item.location || '-'}
                           </span>
                           <span className="text-[10px] text-slate-400">•</span>
                           <span className="text-[10px] font-mono text-slate-400">
                             {item.assetTag}
                           </span>
                         </div>
-                        {item.specificAttributes.material && (
+                        {(item.specificAttributes?.material || item.specification) && (
                           <span className="text-[10px] text-slate-500 font-medium block mt-1">
-                            Bahan: {item.specificAttributes.material}
+                            Bahan: {item.specificAttributes?.material || item.specification}
                           </span>
                         )}
                       </td>

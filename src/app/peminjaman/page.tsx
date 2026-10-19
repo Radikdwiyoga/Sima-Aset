@@ -3,19 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { 
-  Calendar, 
-  Filter, 
-  ChevronLeft, 
-  ChevronRight, 
   ArrowLeftRight,
   Plus,
-  FileText,
   Printer,
   FileSpreadsheet,
   Download,
   CheckCircle2,
   Clock,
-  AlertCircle,
   Paperclip,
   Check,
   ChevronDown
@@ -23,11 +17,8 @@ import {
 import { AssetLoan, DataService } from '@/lib/dataService';
 import { CreateLoanModal } from '@/components/CreateLoanModal';
 import { LoanDocumentModal } from '@/components/LoanDocumentModal';
-import { useAuth } from '@/context/AuthContext';
-import { getRoleDisplayName } from '@/lib/permissions';
 
 export default function PeminjamanPage() {
-  const { user } = useAuth();
   const [loans, setLoans] = useState<AssetLoan[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'Peminjaman Aktif' | 'Semua Log Riwayat'>('Peminjaman Aktif');
@@ -194,25 +185,25 @@ export default function PeminjamanPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-7">
+      <div className="space-y-6 sm:space-y-7 w-full">
         
         {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200 w-full">
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h1 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
                 Peminjaman Barang & Log Aktivitas
               </h1>
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
                 BAST Digital
               </span>
             </div>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
               Kelola permohonan pinjam aset, unggah dokumen surat tugas, dan cetak Berita Acara resmi
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {/* Export Dropdown */}
             <div className="relative">
               <button
@@ -342,7 +333,7 @@ export default function PeminjamanPage() {
                   ) : loans.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-slate-400">
-                        Belum ada data peminjaman aset. Klik tombol "+ Ajukan Peminjaman" untuk membuat data baru.
+                        Belum ada data peminjaman aset. Klik tombol &ldquo;+ Ajukan Peminjaman&rdquo; untuk membuat data baru.
                       </td>
                     </tr>
                   ) : (

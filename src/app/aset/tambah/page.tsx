@@ -4,9 +4,10 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { RoleGuard } from '@/components/RoleGuard';
-import { ChevronRight, Plus, ArrowLeft } from 'lucide-react';
+import { ChevronRight, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { AssetCondition, AssetStatus } from '@/types';
+import { DataService } from '@/lib/dataService';
 
 export default function TambahAsetPage() {
   const router = useRouter();
@@ -45,40 +46,32 @@ export default function TambahAsetPage() {
     const finalTag = assetTag.trim() || `${prefixMap[category] || 'AST'}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     try {
-      const res = await fetch('/api/assets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          assetTag: finalTag,
-          name: name.trim(),
-          category,
-          categorySlug: category === 'Perangkat IT' ? 'it' : category.toLowerCase(),
-          location,
-          locationId: location === 'Kantor Pusat' ? 'loc-1' : 'loc-2',
-          purchaseDate,
-          purchasePrice: Number(purchasePrice) || 0,
-          condition,
-          status,
-          brand,
-          model,
-          serialNumber,
-          assignedTo,
-          specification,
-          notes,
-          image: category === 'Perangkat IT' 
-            ? 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=400&auto=format&fit=crop&q=80'
-            : category === 'Kendaraan'
-            ? 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400&auto=format&fit=crop&q=80'
-            : 'https://images.unsplash.com/photo-1580481077195-c3a821a506cb?w=400&auto=format&fit=crop&q=80'
-        })
+      DataService.createAsset({
+        assetTag: finalTag,
+        name: name.trim(),
+        category,
+        categorySlug: category === 'Perangkat IT' ? 'it' : category.toLowerCase(),
+        location,
+        locationId: location === 'Kantor Pusat' ? 'loc-1' : 'loc-2',
+        purchaseDate,
+        purchasePrice: Number(purchasePrice) || 0,
+        condition,
+        status,
+        brand,
+        model,
+        serialNumber,
+        assignedTo,
+        specification,
+        notes,
+        image: category === 'Perangkat IT' 
+          ? 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=400&auto=format&fit=crop&q=80'
+          : category === 'Kendaraan'
+          ? 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400&auto=format&fit=crop&q=80'
+          : 'https://images.unsplash.com/photo-1580481077195-c3a821a506cb?w=400&auto=format&fit=crop&q=80'
       });
-
-      const json = await res.json();
-      if (json.success) {
-        router.push('/aset');
-      }
+      router.push('/aset');
     } catch (err) {
-      console.error(err);
+      console.error('Gagal menambahkan aset:', err);
     } finally {
       setLoading(false);
     }
@@ -91,10 +84,10 @@ export default function TambahAsetPage() {
         fallbackTitle="Akses Ditolak: Tambah Aset"
         fallbackDescription="Peran Anda tidak diizinkan untuk mendaftarkan aset baru ke dalam sistem inventaris. Fitur ini hanya dapat dilakukan oleh Super Admin atau Admin Aset."
       >
-        <div className="space-y-6 max-w-4xl">
+        <div className="space-y-6 w-full max-w-4xl">
           {/* Header & Breadcrumb */}
           <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Tambah Aset Baru</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Tambah Aset Baru</h1>
             <div className="flex items-center gap-2 text-sm text-slate-400 mt-1">
               <Link href="/aset" className="hover:text-blue-600 font-medium">
                 Data Aset
@@ -105,7 +98,7 @@ export default function TambahAsetPage() {
           </div>
 
           {/* Form Card (Matching Screen 4) */}
-          <div className="bg-white rounded-2xl p-7 border border-slate-200/80 shadow-xs">
+          <div className="bg-white rounded-2xl p-4 sm:p-7 border border-slate-200/80 shadow-xs w-full">
             <h2 className="text-lg font-bold text-slate-900 mb-6 pb-4 border-b border-slate-100 flex items-center gap-2">
               <Plus className="w-5 h-5 text-blue-600" />
               <span>Informasi Umum & Spesifikasi Aset</span>

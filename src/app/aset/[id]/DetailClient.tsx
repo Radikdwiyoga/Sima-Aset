@@ -9,20 +9,17 @@ import {
   MapPin, 
   Wrench, 
   PowerOff, 
-  Printer, 
   QrCode, 
   FileText, 
   Clock, 
-  CheckCircle2, 
   ShieldCheck, 
   User, 
   ArrowLeft,
   X,
-  Check,
   Lock
 } from 'lucide-react';
 import Link from 'next/link';
-import { Asset, AssetHistory, AssetCondition, AssetStatus } from '@/types';
+import { Asset, AssetCondition } from '@/types';
 import { QRModal } from '@/components/QRModal';
 import { useAuth } from '@/context/AuthContext';
 import { DataService } from '@/lib/dataService';
@@ -31,7 +28,7 @@ function DetailAsetContent() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
-  const { user, hasPermission } = useAuth();
+  const { hasPermission } = useAuth();
   const canEdit = hasPermission('canEditAsset');
 
   const [asset, setAsset] = useState<Asset | null>(null);
@@ -205,7 +202,7 @@ function DetailAsetContent() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4">
+      <div className="space-y-4 w-full">
         {/* Breadcrumb */}
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
           <Link href="/dashboard" className="hover:text-blue-600">Home</Link>
@@ -225,7 +222,7 @@ function DetailAsetContent() {
               <ArrowLeft size={16} />
             </button>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-lg font-bold text-slate-900 tracking-tight">{asset.name}</h1>
                 <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-full ${
                   asset.status === 'Aktif' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :

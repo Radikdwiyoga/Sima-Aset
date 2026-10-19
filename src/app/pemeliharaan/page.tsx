@@ -3,20 +3,15 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { 
-  Wrench, 
   Calendar, 
   CheckCircle2, 
   Clock, 
-  AlertTriangle, 
-  Plus, 
-  DollarSign, 
-  UserCheck 
+  Plus
 } from 'lucide-react';
 import { MaintenanceLog } from '@/types';
 
 export default function PemeliharaanPage() {
   const [logs, setLogs] = useState<MaintenanceLog[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Form states for scheduling new maintenance
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -27,54 +22,86 @@ export default function PemeliharaanPage() {
   const [cost, setCost] = useState('');
   const [notes, setNotes] = useState('');
 
+  const STORAGE_KEY = 'sima_maintenance_logs';
+
   const fetchLogs = () => {
-    // Initial sample logs
-    setLogs([
-              {
-                id: 'mnt-1',
-                assetId: 'ast-elk-1',
-                assetTag: 'AF70940',
-                assetName: 'AC Ruang Meeting (Daikin 2PK)',
-                type: 'Rutin',
-                scheduleDate: '2026-10-20',
-                completionDate: null,
-                vendorName: 'PT Sejuk Abadi Mandiri',
-                cost: 350000,
-                notes: 'Pembersihan filter berkala 3 bulanan dan pengecekan freon',
-                status: 'Sedang Berjalan'
-              },
-              {
-                id: 'mnt-2',
-                assetId: 'ast-elk-2',
-                assetTag: 'AF12040',
-                assetName: 'Proyektor Ruang Konferensi 4K',
-                type: 'Perbaikan',
-                scheduleDate: '2026-10-18',
-                completionDate: null,
-                vendorName: 'Epson Service Center',
-                cost: 1500000,
-                notes: 'Penggantian lampu optik proyektor dan kalibrasi sensor fokus',
-                status: 'Sedang Berjalan'
-              },
-              {
-                id: 'mnt-3',
-                assetId: 'ast-rt-4',
-                assetTag: '6FF2940',
-                assetName: 'Tabung APAR Powder 6kg',
-                type: 'Rutin',
-                scheduleDate: '2026-11-15',
-                completionDate: null,
-                vendorName: 'CV Proteksi Api Nusantara',
-                cost: 200000,
-                notes: 'Pemeriksaan gauge jarum tekanan dan sertifikasi masa pakai APAR',
-                status: 'Terjadwal'
-              }
-    ]);
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setLogs(parsed);
+            return;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    const defaultLogs: MaintenanceLog[] = [
+      {
+        id: 'mnt-1',
+        assetId: 'ast-elk-1',
+        assetTag: 'AF70940',
+        assetName: 'AC Ruang Meeting (Daikin 2PK)',
+        type: 'Rutin',
+        scheduleDate: '2026-10-20',
+        completionDate: null,
+        vendorName: 'PT Sejuk Abadi Mandiri',
+        cost: 350000,
+        notes: 'Pembersihan filter berkala 3 bulanan dan pengecekan freon',
+        status: 'Sedang Berjalan'
+      },
+      {
+        id: 'mnt-2',
+        assetId: 'ast-elk-2',
+        assetTag: 'AF12040',
+        assetName: 'Proyektor Ruang Konferensi 4K',
+        type: 'Perbaikan',
+        scheduleDate: '2026-10-18',
+        completionDate: null,
+        vendorName: 'Epson Service Center',
+        cost: 1500000,
+        notes: 'Penggantian lampu optik proyektor dan kalibrasi sensor fokus',
+        status: 'Sedang Berjalan'
+      },
+      {
+        id: 'mnt-3',
+        assetId: 'ast-rt-4',
+        assetTag: '6FF2940',
+        assetName: 'Tabung APAR Powder 6kg',
+        type: 'Rutin',
+        scheduleDate: '2026-11-15',
+        completionDate: null,
+        vendorName: 'CV Proteksi Api Nusantara',
+        cost: 200000,
+        notes: 'Pemeriksaan gauge jarum tekanan dan sertifikasi masa pakai APAR',
+        status: 'Terjadwal'
+      }
+    ];
+    setLogs(defaultLogs);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultLogs));
+    }
   };
 
   useEffect(() => {
     fetchLogs();
   }, []);
+
+  const handleStatusChange = (id: string, newStatus: 'Terjadwal' | 'Sedang Berjalan' | 'Selesai') => {
+    const updated = logs.map(l => l.id === id ? {
+      ...l,
+      status: newStatus,
+      completionDate: newStatus === 'Selesai' ? new Date().toISOString().split('T')[0] : null
+    } : l);
+    setLogs(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    }
+  };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +121,11 @@ export default function PemeliharaanPage() {
       status: 'Terjadwal'
     };
 
-    setLogs((prev) => [newLog, ...prev]);
+    const updated = [newLog, ...logs];
+    setLogs(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    }
     setIsAddOpen(false);
     setAssetTag('');
     setAssetName('');
@@ -105,8 +136,8 @@ export default function PemeliharaanPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="space-y-6 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
               Pemeliharaan & Perbaikan
@@ -118,7 +149,7 @@ export default function PemeliharaanPage() {
 
           <button
             onClick={() => setIsAddOpen(true)}
-            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-blue-500/20"
+            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-blue-500/20 w-fit"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>+ Jadwalkan Servis Baru</span>
@@ -126,14 +157,16 @@ export default function PemeliharaanPage() {
         </div>
 
         {/* Quick Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 w-full">
           <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-blue-50 text-blue-600">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[11px] font-semibold text-slate-400 block">Terjadwal Bulan Ini</span>
-              <span className="text-xl font-black text-slate-900">4 Servis</span>
+              <span className="text-[11px] font-semibold text-slate-400 block">Terjadwal</span>
+              <span className="text-xl font-black text-slate-900">
+                {logs.filter(l => l.status === 'Terjadwal').length} Servis
+              </span>
             </div>
           </div>
 
@@ -143,7 +176,9 @@ export default function PemeliharaanPage() {
             </div>
             <div>
               <span className="text-[11px] font-semibold text-slate-400 block">Sedang Dikerjakan</span>
-              <span className="text-xl font-black text-slate-900">2 Aset</span>
+              <span className="text-xl font-black text-slate-900">
+                {logs.filter(l => l.status === 'Sedang Berjalan').length} Aset
+              </span>
             </div>
           </div>
 
@@ -152,8 +187,10 @@ export default function PemeliharaanPage() {
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[11px] font-semibold text-slate-400 block">Estimasi Biaya Berjalan</span>
-              <span className="text-xl font-black text-slate-900">Rp 2.050.000</span>
+              <span className="text-[11px] font-semibold text-slate-400 block">Total Biaya Servis</span>
+              <span className="text-xl font-black text-slate-900">
+                Rp {logs.reduce((sum, l) => sum + (l.cost || 0), 0).toLocaleString('id-ID')}
+              </span>
             </div>
           </div>
         </div>
@@ -196,8 +233,10 @@ export default function PemeliharaanPage() {
                       Rp {log.cost.toLocaleString('id-ID')}
                     </td>
                     <td className="py-3.5 px-5">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      <select
+                        value={log.status}
+                        onChange={(e) => handleStatusChange(log.id, e.target.value as any)}
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold border-none outline-none cursor-pointer ${
                           log.status === 'Selesai'
                             ? 'bg-emerald-500 text-white'
                             : log.status === 'Sedang Berjalan'
@@ -205,8 +244,10 @@ export default function PemeliharaanPage() {
                             : 'bg-slate-700 text-white'
                         }`}
                       >
-                        {log.status}
-                      </span>
+                        <option value="Terjadwal" className="bg-white text-slate-900">Terjadwal</option>
+                        <option value="Sedang Berjalan" className="bg-white text-slate-900">Sedang Berjalan</option>
+                        <option value="Selesai" className="bg-white text-slate-900">Selesai</option>
+                      </select>
                     </td>
                   </tr>
                 ))}

@@ -6,7 +6,6 @@ import {
   QrCode, 
   Camera, 
   CheckCircle2, 
-  AlertTriangle, 
   XCircle, 
   Search, 
   FileCheck2,
@@ -36,7 +35,7 @@ export default function StockOpnamePage() {
           await html5QrCodeRef.current.stop();
         }
         await html5QrCodeRef.current.clear();
-      } catch (e) {
+      } catch {
         // ignore cleanup error
       }
       html5QrCodeRef.current = null;
@@ -129,7 +128,7 @@ export default function StockOpnamePage() {
           });
         }
       }
-    } catch (e) {
+    } catch {
       setFeedbackMessage({ type: 'error', text: 'Gagal mencari aset.' });
     }
   };
@@ -150,14 +149,14 @@ export default function StockOpnamePage() {
       setStats(prev => ({ ...prev, verified: prev.verified + 1 }));
       setScannedAsset(null);
       setAssetTagInput('');
-    } catch (e) {
+    } catch {
       setFeedbackMessage({ type: 'error', text: 'Gagal memverifikasi aset.' });
     }
   };
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-5xl">
+      <div className="space-y-6 w-full max-w-5xl">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">
             Audit Fisik & Stock Opname

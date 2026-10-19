@@ -1,0 +1,18 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "files.exclude": {
+    "**/.git": true,
+    "**/node_modules": true,
+    "**/out": true,
+    "**/.next": true,
+    "**/.firebase": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/out": true,
+    "**/.next": true,
+    "**/.firebase": true
+  },
+  "typescript.validate.enable": true,
+  "javascript.validate.enable": false
+}

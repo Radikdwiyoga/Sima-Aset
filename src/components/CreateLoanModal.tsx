@@ -6,11 +6,7 @@ import {
   ArrowLeftRight, 
   Upload, 
   FileText, 
-  Calendar, 
-  User, 
-  CheckCircle2, 
-  AlertCircle,
-  Paperclip
+  AlertCircle
 } from 'lucide-react';
 import { Asset } from '@/types';
 import { useAuth } from '@/context/AuthContext';
@@ -45,7 +41,7 @@ export function CreateLoanModal({ isOpen, onClose, onSuccess }: CreateLoanModalP
     if (isOpen) {
       const data = DataService.getAssets();
       setAvailableAssets(data);
-      if (data.length > 0 && !selectedAssetId) {
+      if (data.length > 0) {
         setSelectedAssetId(data[0].id);
       }
 
@@ -101,7 +97,7 @@ export function CreateLoanModal({ isOpen, onClose, onSuccess }: CreateLoanModalP
       });
       onSuccess();
       onClose();
-    } catch (err) {
+    } catch {
       setError('Terjadi kesalahan saat menyimpan peminjaman.');
     } finally {
       setLoading(false);

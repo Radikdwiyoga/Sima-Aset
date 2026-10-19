@@ -2,6 +2,8 @@
   "hosting": {
     "site": "sima-aset",
     "public": "out",
+    "cleanUrls": true,
+    "trailingSlash": false,
     "ignore": [
       "firebase.json",
       "**/.*",

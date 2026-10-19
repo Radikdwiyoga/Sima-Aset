@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Plus, Check } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { CategorySlug, AssetCondition, AssetStatus } from '@/types';
 import { DataService } from '@/lib/dataService';
 
@@ -24,7 +24,7 @@ export function AddAssetModal({
   const [locationName, setLocationName] = useState('Gedung A - Lantai 2');
   const [assignedUserName, setAssignedUserName] = useState('');
   const [brand, setBrand] = useState('');
-  const [purchasePrice, setPurchasePrice] = useState('0');
+  const purchasePrice = 0;
   const [condition, setCondition] = useState<AssetCondition>('Baik');
   const [status, setStatus] = useState<AssetStatus>('Aktif');
   const [quantity, setQuantity] = useState(1);
@@ -95,7 +95,7 @@ export function AddAssetModal({
 
       onSuccess();
       onClose();
-    } catch (err) {
+    } catch {
       setError('Terjadi kesalahan saat menyimpan aset.');
     } finally {
       setLoading(false);

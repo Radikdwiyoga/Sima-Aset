@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (saved) {
       try {
         setUser(JSON.parse(saved));
-      } catch (e) {
+      } catch {
         localStorage.removeItem('sima_user');
         setUser(null);
       }
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: true };
       }
       return { success: false, message: 'Username / Email tidak ditemukan. Gunakan tombol Uji Coba Demo di bawah atau email demo.' };
-    } catch (err) {
+    } catch {
       return { success: false, message: 'Gagal melakukan login' };
     }
   };

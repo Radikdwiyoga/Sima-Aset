@@ -6,12 +6,8 @@ import {
   Search, 
   Plus, 
   QrCode, 
-  Calendar, 
-  Tv, 
   MoreVertical, 
   Wrench, 
-  CheckCircle2, 
-  Clock,
   Download
 } from 'lucide-react';
 import { Asset } from '@/types';
@@ -65,9 +61,9 @@ export default function ElektronikPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 w-full">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">Aset Elektronik</h1>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -75,7 +71,7 @@ export default function ElektronikPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
             <button
               onClick={() => exportAssetsToCSV(assets, 'laporan-aset-elektronik.csv')}
               className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
@@ -196,7 +192,13 @@ export default function ElektronikPage() {
                             />
                           </div>
                           <div>
-                            <span className="font-mono font-bold text-slate-900 block">
+                            <span 
+                              onClick={() => {
+                                setSelectedAssetForDetail(item);
+                                setIsDetailModalOpen(true);
+                              }}
+                              className="font-mono font-bold text-slate-900 block cursor-pointer hover:text-blue-600 transition-colors"
+                            >
                               {item.assetTag}
                             </span>
                             <span className="text-[10px] text-slate-400 font-medium">
@@ -205,15 +207,21 @@ export default function ElektronikPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-4 font-semibold text-slate-800">
+                      <td 
+                        onClick={() => {
+                          setSelectedAssetForDetail(item);
+                          setIsDetailModalOpen(true);
+                        }}
+                        className="py-3 px-4 font-semibold text-slate-800 cursor-pointer hover:text-blue-600 transition-colors"
+                      >
                         {item.name}
                       </td>
                       <td className="py-3 px-4 text-slate-600">
                         <span className="font-medium text-slate-800 block text-[11px]">
-                          {item.specificAttributes.wattage ? `${item.specificAttributes.wattage} Watt` : 'Daya Standar'}
+                          {item.specificAttributes?.wattage ? `${item.specificAttributes.wattage} Watt` : (item.specification || 'Daya Standar')}
                         </span>
                         <span className="text-[10px] text-slate-500">
-                          Siklus Servis: Tiap {item.specificAttributes.maintenanceCycleMonths || 3} Bulan
+                          Siklus Servis: Tiap {item.specificAttributes?.maintenanceCycleMonths || 3} Bulan
                         </span>
                       </td>
                       <td className="py-3 px-4">
@@ -225,10 +233,10 @@ export default function ElektronikPage() {
                           />
                           <div>
                             <span className="font-medium text-slate-800 text-[11px] block">
-                              {item.assignedUserName || 'Senvaus Stales'}
+                              {item.assignedUserName || item.assignedTo || 'General Affairs'}
                             </span>
                             <span className="text-[10px] text-blue-600 font-semibold">
-                              {item.specificAttributes.vendorStatus || item.specificAttributes.vendorName || 'Vendor : 1.000'}
+                              {item.specificAttributes?.vendorStatus || item.specificAttributes?.vendorName || item.brand || 'Vendor Rekanan'}
                             </span>
                           </div>
                         </div>

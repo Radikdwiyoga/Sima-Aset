@@ -12,17 +12,13 @@ import {
   ChevronRight, 
   Download, 
   Eye, 
-  CheckCircle2, 
-  AlertCircle, 
-  Wrench,
-  QrCode,
-  FileSpreadsheet,
-  Lock,
-  Printer,
-  ChevronDown,
+  FileSpreadsheet, 
+  Lock, 
+  Printer, 
+  ChevronDown, 
   Upload
 } from 'lucide-react';
-import { Asset, AssetStatus } from '@/types';
+import { Asset } from '@/types';
 import { exportAssetsToExcel, exportAssetsToPDF } from '@/lib/export';
 import { useAuth } from '@/context/AuthContext';
 import { DataService } from '@/lib/dataService';
@@ -42,7 +38,7 @@ export default function AsetPage() {
   const [selectedLocation, setSelectedLocation] = useState('Semua');
   const [selectedStatus, setSelectedStatus] = useState('Semua');
   const [page, setPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(1248);
+  const [totalCount] = useState(1248);
 
   const fetchAssets = () => {
     setLoading(true);
@@ -80,17 +76,17 @@ export default function AsetPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 w-full">
         {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200 w-full">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Data Aset</h1>
-            <p className="text-sm text-slate-500 mt-0.5">
+            <h1 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">Data Aset</h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
               Kelola dan pantau seluruh daftar aset perusahaan terintegrasi
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {/* Export Dropdown (Excel & PDF) */}
             <div className="relative">
               <button
@@ -108,7 +104,7 @@ export default function AsetPage() {
                   <button
                     onClick={() => {
                       setShowExportMenu(false);
-                      exportAssetsToExcel(assets, `SIMA_Data_Aset_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`);
+                      handleExportExcel();
                     }}
                     className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 flex items-center gap-2.5 transition-colors cursor-pointer"
                   >

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X, Printer, FileText, CheckCircle2, ShieldCheck, Download } from 'lucide-react';
+import { X, Printer, FileText, ShieldCheck } from 'lucide-react';
 import { AssetLoan } from '@/lib/dataService';
 
 interface LoanDocumentModalProps {

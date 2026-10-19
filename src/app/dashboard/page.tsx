@@ -20,13 +20,11 @@ import {
   Wrench, 
   Calendar, 
   ArrowUpRight,
+  ArrowRight,
   TrendingUp,
   Clock,
-  ArrowRight,
   ShieldAlert,
-  Sparkles,
   Layers,
-  MapPin,
   QrCode
 } from 'lucide-react';
 import Link from 'next/link';
@@ -38,7 +36,6 @@ import { DataService } from '@/lib/dataService';
 export default function DashboardPage() {
   const { user } = useAuth();
   const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
 
   useEffect(() => {
@@ -63,8 +60,6 @@ export default function DashboardPage() {
       });
     } catch (e) {
       console.error(e);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -154,51 +149,51 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8 w-full">
         
         {/* Top Header Banner with Welcome & Date */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200/70">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-slate-200/70 w-full">
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+              <h1 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
                 Dashboard Inventaris
               </h1>
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
                 {getRoleDisplayName(user?.role)}
               </span>
             </div>
-            <p className="text-sm sm:text-base text-slate-500 mt-1">
+            <p className="text-xs sm:text-base text-slate-500 mt-1">
               Ringkasan real-time status kepemilikan, sebaran, dan kondisi aset perusahaan.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2.5 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 shadow-xs">
-              <Calendar className="w-4 h-4 text-blue-600" />
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 shadow-xs">
+              <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
               <span>1 Jan 2026 &ndash; 30 Sep 2026</span>
             </div>
             
             <button
               type="button"
               onClick={() => setIsQRScannerOpen(true)}
-              className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm shadow-indigo-500/25 transition-all cursor-pointer"
+              className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm shadow-indigo-500/25 transition-all cursor-pointer"
             >
-              <QrCode className="w-4 h-4" />
+              <QrCode className="w-4 h-4 shrink-0" />
               <span>Scan QR Aset</span>
             </button>
 
             <Link
               href="/aset"
-              className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 rounded-xl text-sm font-bold flex items-center gap-2 shadow-xs transition-all"
+              className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-xs transition-all"
             >
-              <Layers className="w-4 h-4 text-slate-600" />
+              <Layers className="w-4 h-4 text-slate-600 shrink-0" />
               <span>Buka Data Aset</span>
             </Link>
           </div>
         </div>
 
         {/* 4 Metric Cards - Larger Typography and Modern Contrast */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 w-full">
           {/* 1. Total Aset */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
             <div className="flex items-start justify-between">
@@ -289,9 +284,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Charts Row - Increased Height and Legibility */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-7 w-full">
           {/* Donut Chart: Distribusi Kategori */}
-          <div className="bg-white rounded-2xl p-7 border border-slate-200/80 shadow-xs flex flex-col justify-between">
+          <div className="bg-white rounded-2xl p-4 sm:p-7 border border-slate-200/80 shadow-xs flex flex-col justify-between w-full min-w-0">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">
@@ -368,7 +363,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Bar Chart: Jumlah Aset per Lokasi */}
-          <div className="bg-white rounded-2xl p-7 border border-slate-200/80 shadow-xs flex flex-col justify-between">
+          <div className="bg-white rounded-2xl p-4 sm:p-7 border border-slate-200/80 shadow-xs flex flex-col justify-between w-full min-w-0">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">
@@ -430,10 +425,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Lower Section (Eliminating Empty Void with Real Enterprise Modules) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-7">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-7 w-full">
           
           {/* Left 2 Cols: Mutasi & Aktivitas Aset Terkini */}
-          <div className="lg:col-span-2 bg-white rounded-2xl p-7 border border-slate-200/80 shadow-xs">
+          <div className="lg:col-span-2 bg-white rounded-2xl p-4 sm:p-7 border border-slate-200/80 shadow-xs w-full min-w-0">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">
@@ -496,7 +491,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Right 1 Col: Pengingat Servis & Aset Kritis */}
-          <div className="bg-white rounded-2xl p-7 border border-slate-200/80 shadow-xs flex flex-col justify-between">
+          <div className="bg-white rounded-2xl p-4 sm:p-7 border border-slate-200/80 shadow-xs flex flex-col justify-between w-full min-w-0">
             <div>
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">

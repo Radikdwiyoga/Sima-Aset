@@ -71,7 +71,7 @@ export interface Asset {
   assignedUserName?: string | null; // backwards compatibility
   notes?: string; // e.g. "Laptop untuk operasional harian"
   quantity?: number;
-  specificAttributes?: any; // backwards compatibility
+  specificAttributes?: Record<string, any>; // backwards compatibility
   createdAt?: string;
   updatedAt?: string;
 }

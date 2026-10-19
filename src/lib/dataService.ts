@@ -1,6 +1,18 @@
 import initialDb from '../../data/db.json';
 import initialLoans from '../../data/loans.json';
-import { Asset, User } from '@/types';
+import { Asset, User, AssetCategory, Location } from '@/types';
+
+export interface AssetDisposal {
+  id: string;
+  assetId: string;
+  tag: string;
+  name: string;
+  category: string;
+  date: string;
+  reason: string;
+  approval: string;
+  status: string;
+}
 
 export interface AssetLoan {
   id: string;
@@ -24,6 +36,9 @@ const STORAGE_KEYS = {
   ASSETS: 'sima_assets_data',
   LOANS: 'sima_loans_data',
   USERS: 'sima_users_data',
+  LOCATIONS: 'sima_locations_data',
+  CATEGORIES: 'sima_categories_data',
+  DISPOSALS: 'sima_disposals_data',
 };
 
 // Safe access for SSR & Static Export
@@ -85,9 +100,87 @@ export function getStoredUsers(): User[] {
   return initialDb.users as User[];
 }
 
+export function saveStoredUsers(users: User[]): void {
+  if (isBrowser()) {
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+  }
+}
+
+export function getStoredLocations(): Location[] {
+  if (!isBrowser()) return initialDb.locations as Location[];
+  const stored = localStorage.getItem(STORAGE_KEYS.LOCATIONS);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {}
+  }
+  localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(initialDb.locations));
+  return initialDb.locations as Location[];
+}
+
+export function saveStoredLocations(locations: Location[]): void {
+  if (isBrowser()) {
+    localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(locations));
+  }
+}
+
+export function getStoredCategories(): AssetCategory[] {
+  if (!isBrowser()) return initialDb.categories as AssetCategory[];
+  const stored = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {}
+  }
+  localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(initialDb.categories));
+  return initialDb.categories as AssetCategory[];
+}
+
+export function saveStoredCategories(categories: AssetCategory[]): void {
+  if (isBrowser()) {
+    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+  }
+}
+
+export function getStoredDisposals(): AssetDisposal[] {
+  const defaultDisposals: AssetDisposal[] = [
+    {
+      id: 'dsp-1',
+      assetId: 'ast-3',
+      tag: 'AST-IT-0003',
+      name: 'Printer HP LaserJet Pro',
+      category: 'Perangkat IT',
+      date: '15 Agu 2026',
+      reason: 'Komponen roller & mainboard rusak berat, biaya perbaikan melebihi nilai aset',
+      approval: 'Disetujui Manajemen',
+      status: 'Dihapusbukukan'
+    }
+  ];
+  if (!isBrowser()) return defaultDisposals;
+  const stored = localStorage.getItem(STORAGE_KEYS.DISPOSALS);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {}
+  }
+  localStorage.setItem(STORAGE_KEYS.DISPOSALS, JSON.stringify(defaultDisposals));
+  return defaultDisposals;
+}
+
+export function saveStoredDisposals(disposals: AssetDisposal[]): void {
+  if (isBrowser()) {
+    localStorage.setItem(STORAGE_KEYS.DISPOSALS, JSON.stringify(disposals));
+  }
+}
+
 export const DataService = {
   getAssets(filters?: { category?: string; location?: string; status?: string; search?: string }): Asset[] {
-    let list = getStoredAssets();
+    let list = getStoredAssets().map((a) => ({
+      ...a,
+      specificAttributes: a.specificAttributes || {},
+      locationName: a.locationName || a.location || '-',
+      assignedUserName: a.assignedUserName || a.assignedTo || '-',
+    }));
     if (!filters) return list;
 
     if (filters.category && filters.category !== 'Semua') {
@@ -115,7 +208,14 @@ export const DataService = {
 
   getAssetById(id: string): Asset | undefined {
     const assets = getStoredAssets();
-    return assets.find((a) => a.id === id || a.assetTag.toLowerCase() === id.toLowerCase());
+    const found = assets.find((a) => a.id === id || a.assetTag.toLowerCase() === id.toLowerCase());
+    if (!found) return undefined;
+    return {
+      ...found,
+      specificAttributes: found.specificAttributes || {},
+      locationName: found.locationName || found.location || '-',
+      assignedUserName: found.assignedUserName || found.assignedTo || '-',
+    };
   },
 
   createAsset(data: Partial<Asset>): Asset {
@@ -128,6 +228,7 @@ export const DataService = {
       category: data.category || 'Perangkat IT',
       categorySlug: data.categorySlug || 'it',
       location: data.location || 'Kantor Pusat',
+      locationName: data.locationName || data.location || 'Kantor Pusat',
       locationId: data.locationId || 'loc-1',
       purchaseDate: data.purchaseDate || new Date().toISOString().split('T')[0],
       purchasePrice: data.purchasePrice || 0,
@@ -138,8 +239,10 @@ export const DataService = {
       serialNumber: data.serialNumber || '',
       specification: data.specification || '',
       assignedTo: data.assignedTo || '',
+      assignedUserName: data.assignedUserName || data.assignedTo || '',
       notes: data.notes || '',
       image: data.image || '',
+      specificAttributes: data.specificAttributes || {},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -161,6 +264,7 @@ export const DataService = {
         category: data.category || 'Perangkat IT',
         categorySlug: data.categorySlug || 'it',
         location: data.location || 'Kantor Pusat',
+        locationName: data.locationName || data.location || 'Kantor Pusat',
         locationId: data.locationId || 'loc-1',
         purchaseDate: data.purchaseDate || new Date().toISOString().split('T')[0],
         purchasePrice: Number(data.purchasePrice) || 0,
@@ -171,8 +275,10 @@ export const DataService = {
         serialNumber: data.serialNumber || '',
         specification: data.specification || '',
         assignedTo: data.assignedTo || '',
+        assignedUserName: data.assignedUserName || data.assignedTo || '',
         notes: data.notes || 'Hasil Migrasi Data Excel',
         image: data.image || '',
+        specificAttributes: data.specificAttributes || {},
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -334,7 +440,7 @@ export const DataService = {
 
     // Find by exact username, exact email, or username part
     const found = users.find(
-      (u) =>
+      (u: User) =>
         u.username.toLowerCase() === cleanId ||
         u.email.toLowerCase() === cleanId ||
         u.username.toLowerCase() === usernamePart ||
@@ -345,10 +451,169 @@ export const DataService = {
 
     // Fallback if user types 'admin' or admin email
     if (cleanId.includes('admin')) {
-      return users.find((u) => u.role === 'super_admin') || users[0];
+      return users.find((u: User) => u.role === 'super_admin') || users[0];
     }
 
     return null;
+  },
+
+  getLocations(): Location[] {
+    const locations = getStoredLocations();
+    const assets = getStoredAssets();
+    return locations.map(loc => ({
+      ...loc,
+      count: assets.filter(a => (a.location && a.location.toLowerCase().includes(loc.name.toLowerCase())) || a.locationId === loc.id).length
+    }));
+  },
+
+  createLocation(data: { name: string; description?: string }): Location {
+    const list = getStoredLocations();
+    const newLoc: Location = {
+      id: `loc-${Date.now()}`,
+      name: data.name,
+      description: data.description || '',
+      count: 0
+    };
+    list.push(newLoc);
+    saveStoredLocations(list);
+    return newLoc;
+  },
+
+  updateLocation(id: string, updates: Partial<Location>): Location | undefined {
+    const list = getStoredLocations();
+    const idx = list.findIndex(l => l.id === id || l.name.toLowerCase() === id.toLowerCase());
+    if (idx === -1) return undefined;
+    list[idx] = { ...list[idx], ...updates };
+    saveStoredLocations(list);
+    return list[idx];
+  },
+
+  deleteLocation(id: string): boolean {
+    const list = getStoredLocations();
+    const filtered = list.filter(l => l.id !== id && l.name !== id);
+    if (filtered.length !== list.length) {
+      saveStoredLocations(filtered);
+      return true;
+    }
+    return false;
+  },
+
+  getCategories(): AssetCategory[] {
+    const categories = getStoredCategories();
+    const assets = getStoredAssets();
+    const total = assets.length;
+    return categories.map(cat => {
+      const count = assets.filter(a => (a.category && a.category.toLowerCase() === cat.name.toLowerCase()) || a.categorySlug === cat.slug).length;
+      return {
+        ...cat,
+        count,
+        percentage: total > 0 ? Math.round((count / total) * 100) : 0
+      };
+    });
+  },
+
+  createCategory(data: { name: string; codePrefix: string; slug?: string }): AssetCategory {
+    const list = getStoredCategories();
+    const newCat: AssetCategory = {
+      id: `cat-${Date.now()}`,
+      slug: data.slug || data.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+      name: data.name,
+      codePrefix: data.codePrefix,
+      count: 0,
+      percentage: 0
+    };
+    list.push(newCat);
+    saveStoredCategories(list);
+    return newCat;
+  },
+
+  updateCategory(id: string, updates: Partial<AssetCategory>): AssetCategory | undefined {
+    const list = getStoredCategories();
+    const idx = list.findIndex(c => c.id === id || c.slug === id);
+    if (idx === -1) return undefined;
+    list[idx] = { ...list[idx], ...updates };
+    saveStoredCategories(list);
+    return list[idx];
+  },
+
+  deleteCategory(id: string): boolean {
+    const list = getStoredCategories();
+    const filtered = list.filter(c => c.id !== id && c.slug !== id);
+    if (filtered.length !== list.length) {
+      saveStoredCategories(filtered);
+      return true;
+    }
+    return false;
+  },
+
+  getUsers(): User[] {
+    return getStoredUsers();
+  },
+
+  createUser(data: Partial<User>): User {
+    const users = getStoredUsers();
+    const newUser: User = {
+      id: `usr-${Date.now()}`,
+      name: data.name || 'User Baru',
+      username: data.username || `user_${Date.now().toString().slice(-4)}`,
+      email: data.email || 'user@company.com',
+      role: data.role || 'staff',
+      department: data.department || 'Operasional',
+      avatar: data.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'
+    };
+    users.push(newUser);
+    saveStoredUsers(users);
+    return newUser;
+  },
+
+  updateUser(id: string, updates: Partial<User>): User | undefined {
+    const users = getStoredUsers();
+    const idx = users.findIndex((u: User) => u.id === id || u.email === id);
+    if (idx === -1) return undefined;
+    users[idx] = { ...users[idx], ...updates };
+    saveStoredUsers(users);
+    return users[idx];
+  },
+
+  deleteUser(id: string): boolean {
+    const users = getStoredUsers();
+    const filtered = users.filter((u: User) => u.id !== id);
+    if (filtered.length !== users.length) {
+      saveStoredUsers(filtered);
+      return true;
+    }
+    return false;
+  },
+
+  getDisposals(): AssetDisposal[] {
+    return getStoredDisposals();
+  },
+
+  createDisposal(data: Partial<AssetDisposal>): AssetDisposal {
+    const disposals = getStoredDisposals();
+    const newDisposal: AssetDisposal = {
+      id: `dsp-${Date.now()}`,
+      assetId: data.assetId || '',
+      tag: data.tag || '',
+      name: data.name || '',
+      category: data.category || '',
+      date: data.date || new Date().toISOString().split('T')[0],
+      reason: data.reason || 'Dihapusbukukan',
+      approval: data.approval || 'Disetujui Manajemen',
+      status: 'Dihapusbukukan'
+    };
+    disposals.unshift(newDisposal);
+    saveStoredDisposals(disposals);
+
+    // Also update asset status to 'Dihapusbukukan'
+    if (newDisposal.assetId || newDisposal.tag) {
+      const asset = DataService.getAssetById(newDisposal.assetId || newDisposal.tag);
+      if (asset) {
+        DataService.updateAsset(asset.id, { status: 'Dihapusbukukan' });
+      }
+    }
+
+    return newDisposal;
   },
 };
 

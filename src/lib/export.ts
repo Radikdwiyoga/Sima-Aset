@@ -1,4 +1,5 @@
 import { Asset } from '@/types';
+import { calculateAssetDepreciation } from './depreciation';
 
 export function exportAssetsToExcel(assets: Asset[], filename = 'laporan-inventaris-aset.csv') {
   if (!assets || assets.length === 0) return;
@@ -186,3 +187,55 @@ export function exportAssetsToPDF(assets: Asset[], title = 'Laporan Inventaris A
   printWindow.document.write(html);
   printWindow.document.close();
 }
+
+export function exportDepreciationToExcel(assets: Asset[], filename = 'laporan-penyusutan-nilai-buku-aset.csv') {
+  if (!assets || assets.length === 0) return;
+
+  const headers = [
+    'Kode Aset',
+    'Nama Barang',
+    'Kategori',
+    'Lokasi',
+    'Tanggal Pengadaan',
+    'Harga Pengadaan (Rp)',
+    'Masa Manfaat (Tahun)',
+    'Penyusutan per Bulan (Rp)',
+    'Umur Aset (Bulan)',
+    'Akumulasi Penyusutan (Rp)',
+    'Nilai Buku Saat Ini (Rp)',
+    'Persentase Terdepresiasi (%)'
+  ];
+
+  const rows = assets
+    .filter(a => a.status !== 'Dihapusbukukan')
+    .map((a) => {
+      const dep = calculateAssetDepreciation(a);
+      const loc = a.location || a.locationName || '-';
+
+      return [
+        `"${a.assetTag}"`,
+        `"${a.name.replace(/"/g, '""')}"`,
+        `"${a.category}"`,
+        `"${loc.replace(/"/g, '""')}"`,
+        `"${a.purchaseDate || ''}"`,
+        dep.purchasePrice,
+        dep.usefulLifeYears,
+        dep.monthlyDepreciation,
+        dep.ageInMonths,
+        dep.accumulatedDepreciation,
+        dep.currentBookValue,
+        `"${dep.depreciationPercentage}%"`
+      ].join(';');
+    });
+
+  const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename.endsWith('.csv') ? filename : `${filename}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+

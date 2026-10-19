@@ -10,10 +10,7 @@ import {
   User, 
   MapPin, 
   ArrowRight, 
-  CheckCircle2, 
   AlertCircle, 
-  Wrench,
-  Sparkles,
   RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
@@ -50,7 +47,7 @@ export function DashboardQRScannerModal({ isOpen, onClose }: DashboardQRScannerM
           await html5QrCodeRef.current.stop();
         }
         await html5QrCodeRef.current.clear();
-      } catch (e) {
+      } catch {
         // ignore cleanup error
       }
       html5QrCodeRef.current = null;
@@ -123,7 +120,7 @@ export function DashboardQRScannerModal({ isOpen, onClose }: DashboardQRScannerM
           setError(`Aset dengan kode tag "${tag}" tidak ditemukan.`);
         }
       }
-    } catch (err) {
+    } catch {
       setError('Gagal mencari data aset.');
     } finally {
       setLoading(false);

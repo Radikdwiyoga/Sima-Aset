@@ -7,13 +7,9 @@ import {
   Plus, 
   QrCode, 
   Printer, 
-  Trash2, 
-  Filter, 
   CheckSquare, 
   Square,
-  Cpu,
-  Download,
-  Eye
+  Download
 } from 'lucide-react';
 import { Asset } from '@/types';
 import { QRModal } from '@/components/QRModal';
@@ -70,9 +66,9 @@ export default function AsetITPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 w-full">
         {/* Header & Action Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">Aset IT</h1>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -80,7 +76,7 @@ export default function AsetITPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
             <button
               onClick={() => exportAssetsToCSV(assets, 'laporan-aset-it.csv')}
               className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
@@ -169,9 +165,9 @@ export default function AsetITPage() {
                 ) : (
                   assets.map((item) => {
                     const isChecked = selectedIds.includes(item.id);
-                    const spec = item.specificAttributes.cpu 
-                      ? `${item.specificAttributes.cpu}, ${item.specificAttributes.ram || ''}`
-                      : item.specificAttributes.licenseKey || 'Software License';
+                    const spec = item.specification || (item.specificAttributes?.cpu 
+                      ? `${item.specificAttributes.cpu}${item.specificAttributes.ram ? `, ${item.specificAttributes.ram}` : ''}`
+                      : item.specificAttributes?.licenseKey || '-');
 
                     return (
                       <tr 
@@ -214,7 +210,7 @@ export default function AsetITPage() {
                           {spec}
                         </td>
                         <td className="py-3.5 px-4 font-medium text-slate-700">
-                          {item.assignedUserName || '-'}
+                          {item.assignedUserName || item.assignedTo || '-'}
                         </td>
                         <td className="py-3.5 px-4">
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500 text-white shadow-xs">
