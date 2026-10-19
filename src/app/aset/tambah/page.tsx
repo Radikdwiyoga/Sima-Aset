@@ -45,14 +45,38 @@ export default function TambahAsetPage() {
 
     const finalTag = assetTag.trim() || `${prefixMap[category] || 'AST'}-${Math.floor(1000 + Math.random() * 9000)}`;
 
+    // Resolve categorySlug from the master categories (fallback: explicit name map)
+    const slugByName: Record<string, string> = {
+      'Perangkat IT': 'it',
+      'Furniture': 'furniture',
+      'Kendaraan': 'kendaraan',
+      'Elektronik': 'elektronik',
+      'Mesin & Peralatan': 'mesin',
+      'Lainnya': 'lainnya',
+      'Rumah Tangga': 'rumah-tangga',
+      'Fasilitas RT': 'rumah-tangga'
+    };
+    const masterCat = DataService.getCategories().find(
+      (c) => c.name.toLowerCase() === category.toLowerCase()
+    );
+    const categorySlug = masterCat?.slug || slugByName[category] || 'lainnya';
+
+    // Resolve locationId by name so counts stay correct for every location
+    const masterLocs = DataService.getLocations();
+    const matchedLoc =
+      masterLocs.find((l) => l.name.toLowerCase() === location.toLowerCase()) ||
+      masterLocs.find((l) => location.toLowerCase().includes(l.name.toLowerCase())) ||
+      DataService.createLocation({ name: location.trim() || 'Kantor Pusat' });
+
     try {
       DataService.createAsset({
         assetTag: finalTag,
         name: name.trim(),
         category,
-        categorySlug: category === 'Perangkat IT' ? 'it' : category.toLowerCase(),
+        categorySlug,
         location,
-        locationId: location === 'Kantor Pusat' ? 'loc-1' : 'loc-2',
+        locationName: location,
+        locationId: matchedLoc.id,
         purchaseDate,
         purchasePrice: Number(purchasePrice) || 0,
         condition,

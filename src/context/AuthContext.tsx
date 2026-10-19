@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (identifier: string, password?: string, roleOverride?: UserRole): Promise<{ success: boolean; message?: string }> => {
     try {
-      let found = DataService.login(identifier);
+      let found = DataService.login(identifier, password);
       
       // If roleOverride is specified, create or customize the profile for demo testing
       if (!found && roleOverride) {
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('sima_user', JSON.stringify(loggedUser));
         return { success: true };
       }
-      return { success: false, message: 'Username / Email tidak ditemukan. Gunakan tombol Uji Coba Demo di bawah atau email demo.' };
+      return { success: false, message: 'Username / Email atau password salah. Gunakan tombol Uji Coba Demo di bawah jika lupa password.' };
     } catch {
       return { success: false, message: 'Gagal melakukan login' };
     }

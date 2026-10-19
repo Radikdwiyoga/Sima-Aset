@@ -25,8 +25,23 @@ export default function StockOpnamePage() {
   const [isScanning, setIsScanning] = useState(false);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [stats, setStats] = useState({ total: 1595, verified: 42 });
+  const [stats, setStats] = useState({ total: 0, verified: 0 });
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+
+  const loadStats = () => {
+    try {
+      const total = DataService.getAssets().length;
+      const raw = localStorage.getItem('sima_opname_verified');
+      const verifiedIds: string[] = raw ? JSON.parse(raw) : [];
+      setStats({ total, verified: verifiedIds.length });
+    } catch {
+      setStats({ total: 0, verified: 0 });
+    }
+  };
+
+  useEffect(() => {
+    loadStats();
+  }, []);
 
   const stopScanner = async () => {
     if (html5QrCodeRef.current) {
@@ -146,7 +161,18 @@ export default function StockOpnamePage() {
         type: 'success',
         text: `Berhasil memverifikasi ${scannedAsset.assetTag} (${scannedAsset.name}): Kondisi menjadi "${verifiedCondition}" & Status berubah menjadi "${verifiedStatus}"!`
       });
-      setStats(prev => ({ ...prev, verified: prev.verified + 1 }));
+      // Persist the verified set so progress survives reloads
+      try {
+        const raw = localStorage.getItem('sima_opname_verified');
+        const verifiedIds: string[] = raw ? JSON.parse(raw) : [];
+        if (!verifiedIds.includes(scannedAsset.id)) {
+          verifiedIds.push(scannedAsset.id);
+          localStorage.setItem('sima_opname_verified', JSON.stringify(verifiedIds));
+        }
+      } catch {
+        // non-fatal
+      }
+      loadStats();
       setScannedAsset(null);
       setAssetTagInput('');
     } catch {
@@ -194,7 +220,7 @@ export default function StockOpnamePage() {
             <div className="w-24 bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200">
               <div 
                 className="bg-blue-600 h-full rounded-full transition-all duration-500" 
-                style={{ width: `${Math.min(100, (stats.verified / stats.total) * 100 * 5)}%` }}
+                style={{ width: `${stats.total > 0 ? Math.min(100, (stats.verified / stats.total) * 100) : 0}%` }}
               ></div>
             </div>
           </div>

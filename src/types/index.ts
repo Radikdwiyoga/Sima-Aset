@@ -8,6 +8,7 @@ export interface User {
   role: UserRole;
   department: string;
   avatar?: string;
+  password?: string;
 }
 
 export type CategorySlug = 

@@ -31,7 +31,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { getRoleDisplayName } from '@/lib/permissions';
 import { DashboardQRScannerModal } from '@/components/DashboardQRScannerModal';
-import { DataService } from '@/lib/dataService';
+import { DataService, getStoredAssets, getStoredMaintenanceLogs } from '@/lib/dataService';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -47,7 +47,15 @@ export default function DashboardPage() {
           active: stats.activeAssets,
           inactive: stats.inactiveAssets,
           repair: stats.maintenanceAssets,
-          totalGrowth: '+12% dari bulan lalu',
+          // Real growth: assets registered in the last 30 days
+          totalGrowth: (() => {
+            const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+            const added = getStoredAssets().filter((a) => {
+              const t = a.createdAt ? Date.parse(a.createdAt) : NaN;
+              return !isNaN(t) && t >= cutoff;
+            }).length;
+            return added > 0 ? `+${added} aset (30 hari)` : 'Tidak ada aset baru';
+          })(),
           activePercent: `${((stats.activeAssets / (stats.totalAssets || 1)) * 100).toFixed(1)}% dari total`,
           inactivePercent: `${((stats.inactiveAssets / (stats.totalAssets || 1)) * 100).toFixed(1)}% dari total`,
           repairPercent: `${((stats.maintenanceAssets / (stats.totalAssets || 1)) * 100).toFixed(1)}% dari total`,
@@ -56,7 +64,7 @@ export default function DashboardPage() {
         locationDistribution: stats.locationDistribution,
         categories: stats.categories,
         locations: stats.locations,
-        recentActivities: stats.recentActivities,
+        recentActivities: stats.recentActivities || [],
       });
     } catch (e) {
       console.error(e);
@@ -68,7 +76,7 @@ export default function DashboardPage() {
     active: 0,
     inactive: 0,
     repair: 0,
-    totalGrowth: '0% dari bulan lalu',
+    totalGrowth: '',
     activePercent: '0% dari total',
     inactivePercent: '0% dari total',
     repairPercent: '0% dari total'
@@ -76,76 +84,45 @@ export default function DashboardPage() {
 
   const categoryDistribution = data?.categoryDistribution || [];
   const locationDistribution = data?.locationDistribution || [];
+  const recentActivities = (data?.recentActivities || []).slice(0, 10).map((h: any) => {
+    const desc = h.description || '';
+    const isLoan = h.activityType === 'Peminjaman';
+    const isRepair = h.activityType === 'Perbaikan';
+    const isDisposal = h.activityType === 'Penghapusan';
+    const isMove = h.activityType === 'Pindah Lokasi';
+    const action = isLoan ? 'Peminjaman' : isRepair ? 'Perawatan/Perbaikan' : isDisposal ? 'Penghapusan' : isMove ? 'Pindah Lokasi' : h.activityType;
+    const target = desc.replace(/^Dipinjam oleh |^Dikembalikan oleh |^Penghapusan aset — /, '');
+    const status = isLoan && desc.includes('Dikembalikan') ? 'Selesai' : isLoan ? 'Sedang Dipinjam' : isRepair ? 'Dalam Pengerjaan' : isDisposal ? 'Dihapusbukukan' : isMove ? 'Selesai Mutasi' : 'Selesai';
+    const statusColor = isLoan && !desc.includes('Dikembalikan') ? 'bg-amber-50 text-amber-700 border-amber-200' : isRepair ? 'bg-rose-50 text-rose-700 border-rose-200' : isDisposal ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    const date = new Date(h.date);
+    const formatted = isNaN(date.getTime()) ? h.date : date.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
+    return {
+      id: h.id,
+      assetTag: h.assetTag,
+      name: h.assetName,
+      action,
+      target,
+      date: formatted,
+      status,
+      statusColor
+    };
+  });
 
-  const recentActivities = [
-    {
-      id: 'act-1',
-      assetTag: 'AST-IT-0001',
-      name: 'Laptop Dell Latitude 5520',
-      action: 'Peminjaman',
-      target: 'Bagas (Divisi Marketing)',
-      date: '12 Sep 2026, 14:30 WIB',
-      status: 'Sedang Dipinjam',
-      statusColor: 'bg-amber-50 text-amber-700 border-amber-200'
-    },
-    {
-      id: 'act-2',
-      assetTag: 'AST-EL-0001',
-      name: 'Proyektor Epson EB-X500',
-      action: 'Perbaikan',
-      target: 'Epson Service Center',
-      date: '10 Sep 2026, 09:15 WIB',
-      status: 'Dalam Pengerjaan',
-      statusColor: 'bg-rose-50 text-rose-700 border-rose-200'
-    },
-    {
-      id: 'act-3',
-      assetTag: 'AST-KD-0001',
-      name: 'Toyota Avanza 1.3 G',
-      action: 'Pindah Lokasi',
-      target: 'Cabang B - Pool Armada',
-      date: '05 Sep 2026, 11:00 WIB',
-      status: 'Selesai Mutasi',
-      statusColor: 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    },
-    {
-      id: 'act-4',
-      assetTag: 'AST-FN-0001',
-      name: 'Kursi Kerja Ergonomis',
-      action: 'Registrasi Baru',
-      target: 'Kantor Pusat - Divisi GA',
-      date: '01 Sep 2026, 08:45 WIB',
-      status: 'Tersedia',
-      statusColor: 'bg-blue-50 text-blue-700 border-blue-200'
+  const maintenanceAlerts = (() => {
+    try {
+      const logs = getStoredMaintenanceLogs();
+      return logs.slice(0, 3).map((m: any) => ({
+        id: m.id,
+        title: `${m.type === 'Perbaikan' ? 'Perbaikan' : 'Pemeliharaan'} — ${m.assetName}`,
+        subtitle: [m.assetTag, m.vendorName || 'Vendor'].filter(Boolean).join(' • '),
+        dueDate: m.completionDate || m.scheduleDate,
+        badge: m.status || m.type,
+        badgeColor: m.status === 'Selesai' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+      }));
+    } catch {
+      return [];
     }
-  ];
-
-  const maintenanceAlerts = [
-    {
-      id: 'm-1',
-      title: 'Jadwal Servis AC Kantor Utama',
-      subtitle: '12 Unit AC Ruang Meeting & Kantor Pusat',
-      dueDate: '20 Okt 2026',
-      badge: 'Jadwal Rutin',
-      badgeColor: 'bg-blue-50 text-blue-700 border-blue-200'
-    },
-    {
-      id: 'm-2',
-      title: 'Perpanjangan Garansi Server & UPS',
-      subtitle: 'Rack Server Dell PowerEdge R740',
-      dueDate: '28 Okt 2026',
-      badge: 'Segera Habis',
-      badgeColor: 'bg-amber-50 text-amber-700 border-amber-200'
-    },
-    {
-      id: 'm-3',
-      title: 'Inspeksi Armada Kendaraan Operasional',
-      subtitle: 'Uji Emisi & Servis Berkala 8 Kendaraan Cabang',
-      dueDate: '05 Nov 2026',
-      badge: 'Audit Berkala',
-      badgeColor: 'bg-purple-50 text-purple-700 border-purple-200'
-    }
-  ];
+  })();
 
   return (
     <DashboardLayout>
@@ -212,7 +189,7 @@ export default function DashboardPage() {
                 <TrendingUp className="w-4 h-4" />
                 <span>{metrics.totalGrowth}</span>
               </span>
-              <span className="text-slate-400 font-normal">vs bulan lalu</span>
+              <span className="text-slate-400 font-normal">30 hari terakhir</span>
             </div>
           </div>
 
@@ -459,7 +436,7 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {recentActivities.map((act) => (
+                  {recentActivities.map((act: any) => (
                     <tr key={act.id} className="hover:bg-blue-50/30 transition-colors">
                       <td className="py-3.5 px-4">
                         <Link href={`/aset`} className="font-mono font-bold text-blue-600 hover:underline block text-xs">
@@ -503,12 +480,12 @@ export default function DashboardPage() {
                   </h3>
                 </div>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                  3 Prioritas
+                  {maintenanceAlerts.length} Prioritas
                 </span>
               </div>
 
               <div className="space-y-4">
-                {maintenanceAlerts.map((m) => (
+                {maintenanceAlerts.map((m: any) => (
                   <div key={m.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition-colors">
                     <div className="flex items-center justify-between mb-1.5">
                       <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${m.badgeColor}`}>
@@ -532,11 +509,11 @@ export default function DashboardPage() {
 
             <div className="mt-6 pt-4 border-t border-slate-100">
               <Link
-                href="/perawatan"
+                href="/pemeliharaan"
                 className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors"
               >
                 <Wrench className="w-4 h-4 text-slate-600" />
-                <span>Buka Modul Perawatan</span>
+                <span>Buka Modul Pemeliharaan</span>
               </Link>
             </div>
           </div>
