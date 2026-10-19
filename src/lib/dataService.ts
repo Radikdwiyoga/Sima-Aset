@@ -1,6 +1,6 @@
 import initialDb from '../../data/db.json';
 import initialLoans from '../../data/loans.json';
-import { Asset, User, AssetCategory, Location } from '@/types';
+import { Asset, User, AssetCategory, Location, AssetHistory, AssetStatus, MaintenanceLog } from '@/types';
 
 export interface AssetDisposal {
   id: string;
@@ -30,6 +30,10 @@ export interface AssetLoan {
   documentUrl?: string;
   status: 'Sedang Dipinjam' | 'Sudah Dikembalikan' | 'Terlambat';
   notes?: string;
+  /** Asset's assignedTo before the loan was created (restored on return). */
+  previousAssignedTo?: string;
+  /** Asset's status before the loan was created (restored on return). */
+  previousStatus?: string;
 }
 
 const STORAGE_KEYS = {
@@ -39,7 +43,11 @@ const STORAGE_KEYS = {
   LOCATIONS: 'sima_locations_data',
   CATEGORIES: 'sima_categories_data',
   DISPOSALS: 'sima_disposals_data',
+  HISTORIES: 'sima_histories_data',
+  OPNAME_VERIFIED: 'sima_opname_verified',
 };
+
+const MAINTENANCE_LOGS_KEY = 'sima_maintenance_logs';
 
 // Safe access for SSR & Static Export
 function isBrowser(): boolean {
@@ -173,6 +181,53 @@ export function saveStoredDisposals(disposals: AssetDisposal[]): void {
   }
 }
 
+export function getStoredHistories(): AssetHistory[] {
+  const defaults = initialDb.histories as AssetHistory[];
+  if (!isBrowser()) return defaults;
+  const stored = localStorage.getItem(STORAGE_KEYS.HISTORIES);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {}
+  }
+  localStorage.setItem(STORAGE_KEYS.HISTORIES, JSON.stringify(defaults));
+  return defaults;
+}
+
+export function saveStoredHistories(histories: AssetHistory[]): void {
+  if (isBrowser()) {
+    localStorage.setItem(STORAGE_KEYS.HISTORIES, JSON.stringify(histories));
+  }
+}
+
+/** Append an activity to the shared history log (newest first). */
+export function addHistory(entry: Omit<AssetHistory, 'id'>): AssetHistory {
+  const histories = getStoredHistories();
+  const newEntry: AssetHistory = { id: `his-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, ...entry };
+  histories.unshift(newEntry);
+  saveStoredHistories(histories);
+  return newEntry;
+}
+
+export function getStoredMaintenanceLogs(): MaintenanceLog[] {
+  const defaults = (initialDb.maintenanceLogs as MaintenanceLog[]) || [];
+  if (!isBrowser()) return defaults;
+  const stored = localStorage.getItem(MAINTENANCE_LOGS_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {}
+  }
+  localStorage.setItem(MAINTENANCE_LOGS_KEY, JSON.stringify(defaults));
+  return defaults;
+}
+
+export function saveStoredMaintenanceLogs(logs: MaintenanceLog[]): void {
+  if (isBrowser()) {
+    localStorage.setItem(MAINTENANCE_LOGS_KEY, JSON.stringify(logs));
+  }
+}
+
 export const DataService = {
   getAssets(filters?: { category?: string; location?: string; status?: string; search?: string }): Asset[] {
     let list = getStoredAssets().map((a) => ({
@@ -242,6 +297,7 @@ export const DataService = {
       assignedUserName: data.assignedUserName || data.assignedTo || '',
       notes: data.notes || '',
       image: data.image || '',
+      quantity: data.quantity !== undefined ? Number(data.quantity) || 0 : 1,
       specificAttributes: data.specificAttributes || {},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -331,14 +387,79 @@ export const DataService = {
     loans.unshift(newLoan);
     saveStoredLoans(loans);
 
-    // Also update asset assignedTo
+    // Also update asset assignedTo + status, capturing prior state for return
     if (newLoan.assetId) {
-      DataService.updateAsset(newLoan.assetId, {
-        assignedTo: newLoan.borrowerName,
-      });
+      const asset = getStoredAssets().find((a) => a.id === newLoan.assetId);
+      if (asset) {
+        newLoan.previousAssignedTo = asset.assignedTo || '';
+        newLoan.previousStatus = asset.status;
+        saveStoredLoans(loans);
+        DataService.updateAsset(asset.id, {
+          assignedTo: newLoan.borrowerName,
+          assignedUserName: newLoan.borrowerName,
+          ...(asset.status === 'Aktif' || asset.status === 'Tersedia' ? { status: 'Dipinjam' as AssetStatus } : {}),
+        });
+      }
     }
 
+    addHistory({
+      date: newLoan.borrowDate,
+      activityType: 'Peminjaman',
+      assetTag: newLoan.assetTag,
+      assetName: newLoan.assetName,
+      description: `Dipinjam oleh ${newLoan.borrowerName}${newLoan.borrowerDept ? ` (${newLoan.borrowerDept})` : ''}${
+        newLoan.purpose ? ` — ${newLoan.purpose}` : ''
+      }`,
+      user: newLoan.borrowerName,
+    });
+
     return newLoan;
+  },
+
+  /** Return a loaned asset: restore its previous assignee/status and log the activity. */
+  returnLoan(id: string, returnDate?: string): AssetLoan | undefined {
+    const loans = getStoredLoans();
+    const index = loans.findIndex((l) => l.id === id || l.loanNumber === id);
+    if (index === -1) return undefined;
+
+    const loan = loans[index];
+    if (loan.status === 'Sudah Dikembalikan') return loan; // idempotent
+
+    loans[index] = {
+      ...loan,
+      status: 'Sudah Dikembalikan',
+      actualReturnDate: returnDate || new Date().toISOString().split('T')[0],
+    };
+    saveStoredLoans(loans);
+
+    // Restore the asset's prior state
+    if (loan.assetId) {
+      const asset = getStoredAssets().find((a) => a.id === loan.assetId);
+      if (asset) {
+        const clearing = !asset.assignedTo || asset.assignedTo === loan.borrowerName;
+        DataService.updateAsset(asset.id, {
+          ...(clearing
+            ? { assignedTo: loan.previousAssignedTo || '', assignedUserName: loan.previousAssignedTo || '' }
+            : {}),
+          ...(loan.previousStatus && asset.status === 'Dipinjam'
+            ? { status: loan.previousStatus as AssetStatus }
+            : asset.status === 'Dipinjam'
+              ? { status: 'Tersedia' as AssetStatus }
+              : {}),
+        });
+      }
+    }
+
+    addHistory({
+      date: loans[index].actualReturnDate || new Date().toISOString().split('T')[0],
+      activityType: 'Peminjaman',
+      assetTag: loan.assetTag,
+      assetName: loan.assetName,
+      description: `Dikembalikan oleh ${loan.borrowerName} (peminjaman selesai)`,
+      user: loan.borrowerName,
+    });
+
+    return loans[index];
   },
 
   updateLoan(id: string, updates: Partial<AssetLoan>): AssetLoan | undefined {
@@ -427,13 +548,13 @@ export const DataService = {
       locationDistribution: locationDistribution.length > 0 ? locationDistribution : [
         { name: 'Belum Ada Data', count: 0, fill: '#94A3B8' }
       ],
-      categories: initialDb.categories,
-      locations: initialDb.locations,
-      recentActivities: initialDb.histories,
+      categories: getStoredCategories(),
+      locations: getStoredLocations(),
+      recentActivities: getStoredHistories(),
     };
   },
 
-  login(identifier: string): User | null {
+  login(identifier: string, password?: string): User | null {
     const users = getStoredUsers();
     const cleanId = (identifier || '').trim().toLowerCase();
     const usernamePart = cleanId.split('@')[0];
@@ -447,14 +568,29 @@ export const DataService = {
         cleanId.startsWith(u.username.toLowerCase())
     );
 
-    if (found) return found;
+    if (found) {
+      if (password !== undefined && !DataService.validatePassword(found, password)) return null;
+      return found;
+    }
 
-    // Fallback if user types 'admin' or admin email
-    if (cleanId.includes('admin')) {
-      return users.find((u: User) => u.role === 'super_admin') || users[0];
+    // Fallback if user types 'admin' or an admin email exactly
+    if (cleanId === 'admin' || usernamePart === 'admin') {
+      const admin = users.find((u: User) => u.role === 'super_admin') || users[0];
+      if (admin && password !== undefined && !DataService.validatePassword(admin, password)) return null;
+      return admin || null;
     }
 
     return null;
+  },
+
+  /**
+   * Validate a password against a stored user.
+   * Users seeded before the password field existed fall back to the
+   * demo default 'admin123' so existing logins keep working.
+   */
+  validatePassword(user: User, password: string): boolean {
+    const stored = (user as User & { password?: string }).password || 'admin123';
+    return stored === password;
   },
 
   getLocations(): Location[] {
@@ -462,7 +598,11 @@ export const DataService = {
     const assets = getStoredAssets();
     return locations.map(loc => ({
       ...loc,
-      count: assets.filter(a => (a.location && a.location.toLowerCase().includes(loc.name.toLowerCase())) || a.locationId === loc.id).length
+      // Count by locationId when present; fall back to name match only for
+      // legacy assets that have no locationId (avoids double-counting).
+      count: assets.filter(a =>
+        a.locationId ? a.locationId === loc.id : (a.location || '').toLowerCase().includes(loc.name.toLowerCase())
+      ).length
     }));
   },
 
@@ -612,6 +752,15 @@ export const DataService = {
         DataService.updateAsset(asset.id, { status: 'Dihapusbukukan' });
       }
     }
+
+    addHistory({
+      date: newDisposal.date,
+      activityType: 'Penghapusan',
+      assetTag: newDisposal.tag,
+      assetName: newDisposal.name,
+      description: `Penghapusan aset — ${newDisposal.reason}`,
+      user: 'Sistem',
+    });
 
     return newDisposal;
   },

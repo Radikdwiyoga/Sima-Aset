@@ -170,7 +170,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               </div>
             )}
             {group.items.map((item) => {
-              const isActive = pathname === item.href || (item.href !== '/dashboard' && item.href !== '/aset' && pathname.startsWith(item.href));
+              const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href + '/'));
               const Icon = item.icon;
 
               // Check RBAC permission for this item

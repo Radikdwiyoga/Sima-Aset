@@ -14,7 +14,7 @@ import {
   Check,
   ChevronDown
 } from 'lucide-react';
-import { AssetLoan, DataService } from '@/lib/dataService';
+import { AssetLoan, DataService, getStoredHistories } from '@/lib/dataService';
 import { CreateLoanModal } from '@/components/CreateLoanModal';
 import { LoanDocumentModal } from '@/components/LoanDocumentModal';
 
@@ -47,10 +47,7 @@ export default function PeminjamanPage() {
   const handleReturnAsset = (loanId: string) => {
     if (!confirm('Tandai aset ini sebagai sudah dikembalikan?')) return;
     try {
-      DataService.updateLoan(loanId, {
-        status: 'Sudah Dikembalikan',
-        actualReturnDate: new Date().toISOString().split('T')[0]
-      });
+      DataService.returnLoan(loanId);
       fetchLoans();
     } catch (e) {
       console.error(e);
@@ -429,39 +426,39 @@ export default function PeminjamanPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  <tr className="hover:bg-slate-50/50">
-                    <td className="py-4 px-5 font-mono text-xs">12 Sep 2026</td>
-                    <td className="py-4 px-5">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                        Peminjaman
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 font-semibold text-slate-900">Laptop Dell Latitude 5520</td>
-                    <td className="py-4 px-5 text-xs text-slate-600">Dipinjam oleh Bagas untuk dinas luar kota</td>
-                    <td className="py-4 px-5 font-bold text-slate-800 text-xs">Bagas</td>
-                  </tr>
-                  <tr className="hover:bg-slate-50/50">
-                    <td className="py-4 px-5 font-mono text-xs">10 Sep 2026</td>
-                    <td className="py-4 px-5">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                        Perawatan
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 font-semibold text-slate-900">Proyektor Epson EB-X500</td>
-                    <td className="py-4 px-5 text-xs text-slate-600">Servis rutin lampu optik proyektor</td>
-                    <td className="py-4 px-5 font-bold text-slate-800 text-xs">Tim IT</td>
-                  </tr>
-                  <tr className="hover:bg-slate-50/50">
-                    <td className="py-4 px-5 font-mono text-xs">05 Sep 2026</td>
-                    <td className="py-4 px-5">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                        Pindah Lokasi
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 font-semibold text-slate-900">Toyota Avanza 1.3 G</td>
-                    <td className="py-4 px-5 text-xs text-slate-600">Mutasi armada dari Kantor Pusat ke Cabang B</td>
-                    <td className="py-4 px-5 font-bold text-slate-800 text-xs">Admin Logistik</td>
-                  </tr>
+                  {(() => {
+                    const histories = getStoredHistories();
+                    if (histories.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={5} className="py-12 text-center text-slate-400">
+                            Belum ada log aktivitas.
+                          </td>
+                        </tr>
+                      );
+                    }
+                    const badgeColor = (t: string) =>
+                      t === 'Peminjaman' ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : t === 'Perawatan' || t === 'Perbaikan' ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : t === 'Pindah Lokasi' ? 'bg-purple-50 text-purple-700 border-purple-200'
+                      : 'bg-rose-50 text-rose-700 border-rose-200';
+                    return histories.map((h) => (
+                      <tr key={h.id} className="hover:bg-slate-50/50">
+                        <td className="py-4 px-5 font-mono text-xs">{h.date}</td>
+                        <td className="py-4 px-5">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${badgeColor(h.activityType)}`}>
+                            {h.activityType}
+                          </span>
+                        </td>
+                        <td className="py-4 px-5">
+                          <span className="font-semibold text-slate-900 block">{h.assetName}</span>
+                          <span className="text-xs text-slate-400 font-mono">{h.assetTag}</span>
+                        </td>
+                        <td className="py-4 px-5 text-xs text-slate-600">{h.description}</td>
+                        <td className="py-4 px-5 font-bold text-slate-800 text-xs">{h.user}</td>
+                      </tr>
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>

@@ -11,7 +11,7 @@ import {
   FileSpreadsheet, 
   TrendingDown
 } from 'lucide-react';
-import { exportAssetsToExcel, exportAssetsToPDF, exportDepreciationToExcel } from '@/lib/export';
+import { exportAssetsToExcel, exportAssetsToPDF, exportDepreciationToExcel, exportDepreciationToPDF, exportAssetsGroupedToExcel } from '@/lib/export';
 import { DataService } from '@/lib/dataService';
 import { calculatePortfolioDepreciation } from '@/lib/depreciation';
 import { Asset } from '@/types';
@@ -30,15 +30,35 @@ export default function LaporanPage() {
     setLoading(true);
     try {
       const data = DataService.getAssets();
+      const date = new Date().toISOString().split('T')[0];
+
       if (type === 'penyusutan-aset') {
         if (format === 'excel') {
-          exportDepreciationToExcel(data, `Laporan_Depresiasi_Nilai_Buku_SIMA_${new Date().toISOString().split('T')[0]}.csv`);
+          exportDepreciationToExcel(data, `Laporan_Depresiasi_Nilai_Buku_SIMA_${date}.csv`);
         } else {
-          exportAssetsToPDF(data, title);
+          exportDepreciationToPDF(data, title);
+        }
+      } else if (type === 'per-kategori') {
+        if (format === 'excel') {
+          exportAssetsGroupedToExcel(data, 'category', `Laporan_Per_Kategori_SIMA_${date}.csv`);
+        } else {
+          exportAssetsToPDF([...data].sort((a, b) => a.category.localeCompare(b.category, 'id')), title);
+        }
+      } else if (type === 'per-lokasi') {
+        if (format === 'excel') {
+          exportAssetsGroupedToExcel(data, 'location', `Laporan_Per_Lokasi_SIMA_${date}.csv`);
+        } else {
+          exportAssetsToPDF([...data].sort((a, b) => (a.location || '').localeCompare(b.location || '', 'id')), title);
+        }
+      } else if (type === 'kondisi-pemeliharaan') {
+        if (format === 'excel') {
+          exportAssetsGroupedToExcel(data, 'condition', `Laporan_Kondisi_Pemeliharaan_SIMA_${date}.csv`);
+        } else {
+          exportAssetsToPDF([...data].sort((a, b) => a.condition.localeCompare(b.condition, 'id')), title);
         }
       } else {
         if (format === 'excel') {
-          exportAssetsToExcel(data, `Laporan_${type}_SIMA_${new Date().toISOString().split('T')[0]}.csv`);
+          exportAssetsToExcel(data, `Laporan_${type}_SIMA_${date}.csv`);
         } else {
           exportAssetsToPDF(data, title);
         }

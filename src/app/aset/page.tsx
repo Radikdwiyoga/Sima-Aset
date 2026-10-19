@@ -38,11 +38,16 @@ export default function AsetPage() {
   const [selectedLocation, setSelectedLocation] = useState('Semua');
   const [selectedStatus, setSelectedStatus] = useState('Semua');
   const [page, setPage] = useState(1);
-  const [totalCount] = useState(1248);
+  const pageSize = 10;
+  const [totalCount, setTotalCount] = useState(0);
+  const [allAssets, setAllAssets] = useState<Asset[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<{ label: string }[]>([]);
+  const [locationOptions, setLocationOptions] = useState<{ name: string }[]>([]);
 
   const fetchAssets = () => {
     setLoading(true);
     try {
+      setAllAssets(DataService.getAssets());
       const data = DataService.getAssets({
         status: activeTab !== 'Semua' ? activeTab : selectedStatus,
         category: selectedCategory,
@@ -50,6 +55,7 @@ export default function AsetPage() {
         search
       });
       setAssets(data);
+      setTotalCount(data.length);
     } catch (err) {
       console.error(err);
     } finally {
@@ -57,20 +63,40 @@ export default function AsetPage() {
     }
   };
 
+  // Load master data for filter dropdowns + full list for tab counts
   useEffect(() => {
+    setAllAssets(DataService.getAssets());
+    setCategoryOptions(DataService.getCategories().map((c) => ({ label: c.name })));
+    setLocationOptions(DataService.getLocations().map((l) => ({ name: l.name })));
+  }, []);
+
+  // Support deep links like /aset?category=Kendaraan (from kategori page)
+  useEffect(() => {
+    const cat = new URLSearchParams(window.location.search).get('category');
+    if (cat) setSelectedCategory(cat);
+  }, []);
+
+  useEffect(() => {
+    setPage(1);
     fetchAssets();
-  }, [activeTab, selectedCategory, selectedLocation, selectedStatus]);
+  }, [activeTab, selectedCategory, selectedLocation, selectedStatus, search]);
 
   const handleExportExcel = () => {
     exportAssetsToExcel(assets, `SIMA_Data_Aset_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`);
   };
 
   const tabs: { label: 'Semua' | 'Aktif' | 'Tidak Aktif' | 'Dalam Perbaikan'; count: number }[] = [
-    { label: 'Semua', count: 1248 },
-    { label: 'Aktif', count: 1102 },
-    { label: 'Tidak Aktif', count: 98 },
-    { label: 'Dalam Perbaikan', count: 48 }
+    { label: 'Semua', count: allAssets.length },
+    { label: 'Aktif', count: allAssets.filter((a) => a.status === 'Aktif').length },
+    { label: 'Tidak Aktif', count: allAssets.filter((a) => a.status === 'Tidak Aktif').length },
+    { label: 'Dalam Perbaikan', count: allAssets.filter((a) => a.status === 'Dalam Perbaikan').length }
   ];
+
+  const totalPages = Math.max(1, Math.ceil(assets.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = assets.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const rangeStart = assets.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
+  const rangeEnd = Math.min(safePage * pageSize, assets.length);
 
   const canCreate = hasPermission('canCreateAsset');
 
@@ -211,12 +237,9 @@ export default function AsetPage() {
                 className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
               >
                 <option value="Semua">Semua Kategori</option>
-                <option value="Perangkat IT">Perangkat IT</option>
-                <option value="Furniture">Furniture</option>
-                <option value="Kendaraan">Kendaraan</option>
-                <option value="Elektronik">Elektronik</option>
-                <option value="Mesin & Peralatan">Mesin & Peralatan</option>
-                <option value="Lainnya">Lainnya</option>
+                {categoryOptions.map((c) => (
+                  <option key={c.label} value={c.label}>{c.label}</option>
+                ))}
               </select>
             </div>
 
@@ -229,11 +252,9 @@ export default function AsetPage() {
                 className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
               >
                 <option value="Semua">Semua Lokasi</option>
-                <option value="Kantor Pusat">Kantor Pusat</option>
-                <option value="Cabang A">Cabang A</option>
-                <option value="Cabang B">Cabang B</option>
-                <option value="Gudang">Gudang</option>
-                <option value="Ruang Rapat">Ruang Rapat</option>
+                {locationOptions.map((l) => (
+                  <option key={l.name} value={l.name}>{l.name}</option>
+                ))}
               </select>
             </div>
 
@@ -301,21 +322,21 @@ export default function AsetPage() {
                       </div>
                     </td>
                   </tr>
-                ) : assets.length === 0 ? (
+                ) : pageItems.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-400">
                       Tidak ada aset yang sesuai kriteria pencarian.
                     </td>
                   </tr>
                 ) : (
-                  assets.map((item, index) => (
+                  pageItems.map((item, index) => (
                     <tr 
                       key={item.id} 
                       onClick={() => router.push(`/aset/${item.id}`)}
                       className="hover:bg-blue-50/30 transition-colors cursor-pointer group"
                     >
                       <td className="py-4 px-5 text-center text-slate-400 font-mono text-xs">
-                        {index + 1}
+                        {(safePage - 1) * pageSize + index + 1}
                       </td>
                       <td className="py-4 px-5 font-mono font-bold text-blue-600 group-hover:underline text-sm">
                         {item.assetTag}
@@ -367,25 +388,26 @@ export default function AsetPage() {
           {/* Pagination (Matching Screen 2) */}
           <div className="p-4 sm:p-5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500">
             <div>
-              Menampilkan <span className="font-bold text-slate-900">1</span> sampai{' '}
-              <span className="font-bold text-slate-900">{assets.length}</span> dari{' '}
+              Menampilkan <span className="font-bold text-slate-900">{rangeStart}</span> sampai{' '}
+              <span className="font-bold text-slate-900">{rangeEnd}</span> dari{' '}
               <span className="font-bold text-slate-900">{totalCount}</span> total data aset
             </div>
 
             <div className="flex items-center gap-2">
               <button
-                disabled={page === 1}
+                disabled={safePage === 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 transition-colors cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <span className="px-3.5 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-xs">
-                {page}
+                {safePage} / {totalPages}
               </span>
               <button
-                onClick={() => setPage(p => p + 1)}
-                className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                disabled={safePage >= totalPages}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 transition-colors cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

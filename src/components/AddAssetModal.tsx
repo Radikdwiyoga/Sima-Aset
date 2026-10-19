@@ -53,15 +53,39 @@ export function AddAssetModal({
     setLoading(true);
     setError('');
 
-    // Generate tag if empty
+    // Resolve master category (for name + code prefix) with a safe fallback map
+    const masterCategories = DataService.getCategories();
+    const masterCat = masterCategories.find((c) => c.slug === category);
+    const fallbackNames: Record<string, string> = {
+      it: 'Perangkat IT',
+      elektronik: 'Elektronik',
+      furnitur: 'Furniture',
+      furniture: 'Furniture',
+      kendaraan: 'Kendaraan',
+      mesin: 'Mesin & Peralatan',
+      'rumah-tangga': 'Rumah Tangga',
+      lainnya: 'Lainnya'
+    };
+    const categoryName = masterCat?.name || fallbackNames[category] || 'Lainnya';
+
+    // Generate tag if empty, matching the seed convention (e.g. AST-IT-0007)
     const prefixMap: Record<string, string> = {
-      it: 'IT',
-      'rumah-tangga': 'RTK',
-      elektronik: 'ELK',
-      furnitur: 'FRN',
-      furniture: 'FRN'
+      it: 'AST-IT',
+      'rumah-tangga': 'AST-RT',
+      elektronik: 'AST-EL',
+      furnitur: 'AST-FN',
+      furniture: 'AST-FN',
+      kendaraan: 'AST-KD',
+      mesin: 'AST-MS',
+      lainnya: 'AST-LN'
     };
     const finalTag = assetTag.trim() || `${prefixMap[category] || 'AST'}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    // Resolve locationId from the typed location name (no more hard-coded loc-1)
+    const masterLocations = DataService.getLocations();
+    const matchedLoc = masterLocations.find(
+      (l) => l.name.toLowerCase() === locationName.trim().toLowerCase()
+    );
 
     const specificAttributes: Record<string, any> = {};
     if (category === 'it') {
@@ -78,19 +102,26 @@ export function AddAssetModal({
     }
 
     try {
+      // Register an unknown typed location so location counts stay truthful
+      const location = matchedLoc || DataService.createLocation({ name: locationName.trim() || 'Kantor Pusat' });
+
       DataService.createAsset({
         assetTag: finalTag,
         name,
         categorySlug: category,
-        category: category === 'it' ? 'Perangkat IT' : category === 'elektronik' ? 'Elektronik' : category === 'furnitur' ? 'Furniture' : 'Rumah Tangga',
-        locationId: 'loc-1',
-        location: locationName,
+        category: categoryName,
+        locationId: location.id,
+        location: location.name,
+        locationName: location.name,
         assignedTo: assignedUserName || undefined,
+        assignedUserName: assignedUserName || undefined,
         brand,
         purchaseDate: new Date().toISOString().split('T')[0],
         purchasePrice: Number(purchasePrice) || 0,
         condition,
         status,
+        quantity: Math.max(1, Number(quantity) || 1),
+        specificAttributes,
       });
 
       onSuccess();

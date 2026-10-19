@@ -5,6 +5,7 @@
       "name": "Admin",
       "username": "admin",
       "email": "admin@company.com",
+      "password": "admin123",
       "role": "super_admin",
       "department": "Administrator",
       "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80"
@@ -14,6 +15,7 @@
       "name": "Budi",
       "username": "budi",
       "email": "budi@company.com",
+      "password": "admin123",
       "role": "staff",
       "department": "User",
       "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80"
@@ -23,6 +25,7 @@
       "name": "Siti",
       "username": "siti",
       "email": "siti@company.com",
+      "password": "admin123",
       "role": "staff",
       "department": "User",
       "avatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=120&auto=format&fit=crop&q=80"
@@ -32,6 +35,7 @@
       "name": "Andi",
       "username": "andi",
       "email": "andi@company.com",
+      "password": "admin123",
       "role": "admin_it",
       "department": "Teknisi",
       "avatar": "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=120&auto=format&fit=crop&q=80"
@@ -41,6 +45,7 @@
       "name": "Rina",
       "username": "rina",
       "email": "rina@company.com",
+      "password": "admin123",
       "role": "management",
       "department": "User",
       "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
@@ -94,6 +99,14 @@
       "codePrefix": "AST-LN",
       "percentage": 8,
       "count": 100
+    },
+    {
+      "id": "cat-7",
+      "slug": "rumah-tangga",
+      "name": "Fasilitas RT",
+      "codePrefix": "AST-RT",
+      "percentage": 0,
+      "count": 0
     }
   ],
   "locations": [

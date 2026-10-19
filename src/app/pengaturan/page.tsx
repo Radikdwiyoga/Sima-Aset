@@ -90,8 +90,17 @@ export default function PengaturanPage() {
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    if (!user) return;
+    try {
+      // Persist to the users master + refresh the active session copy
+      DataService.updateUser(user.id, { name: name.trim() || user.name, email: email.trim() || user.email });
+      const updated = { ...user, name: name.trim() || user.name, email: email.trim() || user.email };
+      localStorage.setItem('sima_user', JSON.stringify(updated));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error('Gagal menyimpan profil:', err);
+    }
   };
 
   const availableRoles: { role: UserRole; label: string }[] = [
