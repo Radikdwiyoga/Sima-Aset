@@ -64,14 +64,14 @@ export function ImportExcelModal({ isOpen, onClose, onSuccess }: ImportExcelModa
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
+        const buffer = evt.target?.result as ArrayBuffer;
+        const wb = XLSX.read(buffer, { type: 'array' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
         const rawJson: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
         if (rawJson.length === 0) {
-          setError('File Excel/CSV kosong atau format tidak terbaca.');
+          setError('File Excel (.xlsx) kosong atau format tidak terbaca.');
           setLoading(false);
           return;
         }
@@ -137,7 +137,7 @@ export function ImportExcelModal({ isOpen, onClose, onSuccess }: ImportExcelModa
       }
     };
 
-    reader.readAsBinaryString(selectedFile);
+    reader.readAsArrayBuffer(selectedFile);
   };
 
   const handleDownloadTemplate = () => {
@@ -226,7 +226,7 @@ export function ImportExcelModal({ isOpen, onClose, onSuccess }: ImportExcelModa
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">Import & Migrasi Data dari Excel</h2>
-              <p className="text-xs text-slate-500">Impor master aset massal dari file .xlsx, .xls, atau .csv ke dalam SIMA</p>
+              <p className="text-xs text-slate-500">Impor master aset massal dari file Microsoft Excel (.xlsx) ke dalam SIMA</p>
             </div>
           </div>
           <button 
@@ -271,7 +271,7 @@ export function ImportExcelModal({ isOpen, onClose, onSuccess }: ImportExcelModa
             <input
               ref={fileInputRef}
               type="file"
-              accept=".xlsx, .xls, .csv"
+              accept=".xlsx, .xls"
               onChange={handleFileUpload}
               className="hidden"
             />
@@ -293,7 +293,7 @@ export function ImportExcelModal({ isOpen, onClose, onSuccess }: ImportExcelModa
             ) : (
               <div>
                 <p className="text-xs font-bold text-slate-800">Klik untuk upload file Excel atau drag & drop file ke sini</p>
-                <p className="text-[11px] text-slate-500 mt-1">Mendukung format Microsoft Excel (.xlsx, .xls) dan CSV (.csv)</p>
+                <p className="text-[11px] text-slate-500 mt-1">Mendukung format Microsoft Excel (.xlsx)</p>
               </div>
             )}
           </div>

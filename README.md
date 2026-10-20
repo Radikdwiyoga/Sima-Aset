@@ -40,17 +40,17 @@ Sistem dilengkapi proteksi rute wajib login. Pada halaman login ([`/login`](http
 
 ### 2. 📦 Manajemen Master Data Aset (CRUD Terpadu)
 - Katalog aset komprehensif dengan filter status (*Semua, Aktif, Tidak Aktif, Dalam Perbaikan*), kategori, lokasi, serta pencarian instan.
-- Modal detail aset lengkap: Tag ID, Nomor Seri, Merk, Tipe, Lokasi Fisik, Nilai Perolehan, Riwayat Pemakai (PIC), dan Foto Aset.
+- Modal detail aset lengkap: Tag ID, Nomor Seri, Merk, Tipe, Lokasi Fisik, Nilai Perolehan, Riwayat Pemakai (PIC), Foto Aset, serta **Upload & Unduh Dokumen Kelengkapan (Faktur, Kartu Garansi, Buku Manual, BAST)**.
 - Pembatasan tombol CRUD secara otomatis berdasarkan peran user yang sedang login (RBAC).
 
-### 3. 📥 Fitur Import / Migrasi Data Massal dari Excel & CSV
+### 3. 📥 Fitur Import / Migrasi Data Massal dari Excel (.xlsx)
 - **Download Template Standar:** Tombol *Unduh Template Excel (.xlsx)* yang otomatis menghasilkan format kolom resmi beserta contoh data.
-- **Drag & Drop Upload:** Mendukung file `.xlsx`, `.xls`, dan `.csv`.
+- **Drag & Drop Upload:** Mendukung file format resmi Microsoft Excel `.xlsx` (dan `.xls`).
 - **Auto-Mapping Header Fleksibel:** Mendeteksi nama kolom bahasa Indonesia maupun properti teknis (Nama Aset, Kode Aset, Kategori, Lokasi, Kondisi, Nilai Aset, PIC, Serial Number).
 - **Live Data Preview:** Tinjauan baris data dan validasi sebelum disimpan ke sistem.
 
 ### 4. 📤 Ekspor Laporan Data Multiformat
-- **Download Excel (.csv):** Mengunduh seluruh atau sebagian data aset terfilter ke dalam format spreadsheet.
+- **Download Excel (.xlsx):** Mengunduh seluruh atau sebagian data aset terfilter langsung ke dalam format binary Microsoft Excel (`.xlsx`) siap pakai dengan styling kolom yang rapi.
 - **Cetak / Unduh PDF Resmi:** Menghasilkan dokumen cetak laporan resmi berstandar korporat yang rapi dan siap diprint atau disimpan sebagai PDF.
 
 ### 5. 📱 Pemindai Barcode / QR Code Interaktif

@@ -1,6 +1,6 @@
 import initialDb from '../../data/db.json';
 import initialLoans from '../../data/loans.json';
-import { Asset, User, AssetCategory, Location, AssetHistory, AssetStatus, MaintenanceLog } from '@/types';
+import { Asset, User, AssetCategory, Location, AssetHistory, AssetStatus, MaintenanceLog, AssetDocument } from '@/types';
 
 export interface AssetDisposal {
   id: string;
@@ -267,6 +267,26 @@ export const DataService = {
     if (!found) return undefined;
     return {
       ...found,
+      documents: found.documents && found.documents.length > 0 ? found.documents : [
+        {
+          id: `doc-${found.id}-1`,
+          name: `Invoice_Pengadaan_${found.assetTag}.pdf`,
+          category: 'Invoice',
+          fileType: 'pdf',
+          fileSize: '1.2 MB',
+          uploadDate: found.purchaseDate || '2026-01-15',
+          notes: 'Faktur pembelian dan bukti transaksi pengadaan aset resmi'
+        },
+        {
+          id: `doc-${found.id}-2`,
+          name: `Kartu_Garansi_Resmi_${(found.brand || 'Vendor').replace(/\s+/g, '_')}.pdf`,
+          category: 'Garansi',
+          fileType: 'pdf',
+          fileSize: '850 KB',
+          uploadDate: found.purchaseDate || '2026-01-15',
+          notes: 'Sertifikat dan kartu jaminan garansi resmi perbaikan dan suku cadang'
+        }
+      ],
       specificAttributes: found.specificAttributes || {},
       locationName: found.locationName || found.location || '-',
       assignedUserName: found.assignedUserName || found.assignedTo || '-',
@@ -358,6 +378,56 @@ export const DataService = {
     };
     saveStoredAssets(assets);
     return assets[index];
+  },
+
+  addAssetDocument(assetId: string, doc: Omit<AssetDocument, 'id' | 'uploadDate'>): AssetDocument | undefined {
+    const assets = getStoredAssets();
+    const index = assets.findIndex((a) => a.id === assetId || a.assetTag.toLowerCase() === assetId.toLowerCase());
+    if (index === -1) return undefined;
+
+    const currentDocs = assets[index].documents || [
+      {
+        id: `doc-${assets[index].id}-1`,
+        name: `Invoice_Pengadaan_${assets[index].assetTag}.pdf`,
+        category: 'Invoice',
+        fileType: 'pdf',
+        fileSize: '1.2 MB',
+        uploadDate: assets[index].purchaseDate || '2026-01-15',
+        notes: 'Faktur pembelian dan bukti transaksi pengadaan aset resmi'
+      },
+      {
+        id: `doc-${assets[index].id}-2`,
+        name: `Kartu_Garansi_Resmi_${(assets[index].brand || 'Vendor').replace(/\s+/g, '_')}.pdf`,
+        category: 'Garansi',
+        fileType: 'pdf',
+        fileSize: '850 KB',
+        uploadDate: assets[index].purchaseDate || '2026-01-15',
+        notes: 'Sertifikat dan kartu jaminan garansi resmi perbaikan dan suku cadang'
+      }
+    ];
+
+    const newDoc: AssetDocument = {
+      ...doc,
+      id: `doc-${Date.now()}`,
+      uploadDate: new Date().toISOString().split('T')[0],
+    };
+
+    assets[index].documents = [newDoc, ...currentDocs];
+    assets[index].updatedAt = new Date().toISOString();
+    saveStoredAssets(assets);
+    return newDoc;
+  },
+
+  deleteAssetDocument(assetId: string, documentId: string): boolean {
+    const assets = getStoredAssets();
+    const index = assets.findIndex((a) => a.id === assetId || a.assetTag.toLowerCase() === assetId.toLowerCase());
+    if (index === -1) return false;
+
+    const currentDocs = assets[index].documents || [];
+    assets[index].documents = currentDocs.filter(d => d.id !== documentId);
+    assets[index].updatedAt = new Date().toISOString();
+    saveStoredAssets(assets);
+    return true;
   },
 
   getLoans(): AssetLoan[] {

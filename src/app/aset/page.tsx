@@ -82,7 +82,7 @@ export default function AsetPage() {
   }, [activeTab, selectedCategory, selectedLocation, selectedStatus, search]);
 
   const handleExportExcel = () => {
-    exportAssetsToExcel(assets, `SIMA_Data_Aset_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`);
+    exportAssetsToExcel(assets, `SIMA_Data_Aset_${activeTab}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const tabs: { label: 'Semua' | 'Aktif' | 'Tidak Aktif' | 'Dalam Perbaikan'; count: number }[] = [
@@ -135,7 +135,7 @@ export default function AsetPage() {
                     className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 flex items-center gap-2.5 transition-colors cursor-pointer"
                   >
                     <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                    <span>Download Excel (.csv)</span>
+                    <span>Download Excel (.xlsx)</span>
                   </button>
                   <button
                     onClick={() => {

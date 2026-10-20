@@ -1,5 +1,6 @@
 import { Asset } from '@/types';
 import { calculateAssetDepreciation } from './depreciation';
+import * as XLSX from 'xlsx';
 
 /** Escape interpolated values before embedding them in generated HTML (PDF print view). */
 function escapeHtml(value: unknown): string {
@@ -14,14 +15,14 @@ function escapeHtml(value: unknown): string {
 export type ReportGroupBy = 'category' | 'location' | 'condition';
 
 /**
- * Grouped Excel/CSV report: a per-group summary (count + total value) on top,
- * then every asset row sorted into its group. Used by the per-kategori,
- * per-lokasi and kondisi laporan cards.
+ * Grouped Excel (.xlsx) report:
+ * Sheet 1: 'Ringkasan' - summary table (count + total value per group)
+ * Sheet 2: 'Rincian_Aset' - complete row-by-row asset breakdown
  */
 export function exportAssetsGroupedToExcel(
   assets: Asset[],
   groupBy: ReportGroupBy,
-  filename = 'laporan-kelompok-aset.csv'
+  filename = 'laporan-kelompok-aset.xlsx'
 ) {
   if (!assets || assets.length === 0) return;
 
@@ -41,62 +42,84 @@ export function exportAssetsGroupedToExcel(
   });
   const sortedKeys = [...groups.keys()].sort((a, b) => a.localeCompare(b, 'id'));
 
-  const lines: string[] = [];
-  lines.push([label, 'Jumlah Aset', 'Total Nilai Pengadaan (Rp)'].join(';'));
-  sortedKeys.forEach((k) => {
+  // Sheet 1: Ringkasan
+  const summaryRows = sortedKeys.map((k, idx) => {
     const list = groups.get(k)!;
     const total = list.reduce((s, a) => s + (a.purchasePrice || 0), 0);
-    lines.push([`"${k.replace(/"/g, '""')}"`, list.length, total].join(';'));
+    return {
+      'No': idx + 1,
+      [label]: k,
+      'Jumlah Aset': list.length,
+      'Total Nilai Pengadaan (Rp)': total
+    };
   });
+
   const grandTotal = assets.reduce((s, a) => s + (a.purchasePrice || 0), 0);
-  lines.push(['"TOTAL"', assets.length, grandTotal].join(';'));
-  lines.push('');
-  lines.push(['Kode Aset', 'Nama Barang', label, 'Penanggung Jawab', 'Status', 'Harga Pengadaan (Rp)', 'Tanggal Pengadaan'].join(';'));
+  summaryRows.push({
+    'No': summaryRows.length + 1,
+    [label]: 'TOTAL KESELURUHAN',
+    'Jumlah Aset': assets.length,
+    'Total Nilai Pengadaan (Rp)': grandTotal
+  });
+
+  const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+  wsSummary['!cols'] = [
+    { wch: 6 },
+    { wch: 32 },
+    { wch: 16 },
+    { wch: 28 }
+  ];
+
+  // Sheet 2: Rincian
+  let rowNo = 1;
+  const detailRows: Record<string, unknown>[] = [];
   sortedKeys.forEach((k) => {
     groups.get(k)!.forEach((a) => {
       const pic = a.assignedTo || a.assignedUserName || '-';
-      lines.push([
-        `"${a.assetTag}"`,
-        `"${a.name.replace(/"/g, '""')}"`,
-        `"${k.replace(/"/g, '""')}"`,
-        `"${pic.replace(/"/g, '""')}"`,
-        `"${a.status}"`,
-        a.purchasePrice || 0,
-        `"${a.purchaseDate || ''}"`
-      ].join(';'));
+      detailRows.push({
+        'No': rowNo++,
+        'Kode Aset': a.assetTag,
+        'Nama Barang': a.name,
+        [label]: k,
+        'Penanggung Jawab': pic,
+        'Kondisi': a.condition,
+        'Status': a.status,
+        'Harga Pengadaan (Rp)': a.purchasePrice || 0,
+        'Tanggal Pengadaan': a.purchaseDate || ''
+      });
     });
   });
 
-  const csvContent = '\uFEFF' + lines.join('\r\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename.endsWith('.csv') ? filename : `${filename}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-export function exportAssetsToExcel(assets: Asset[], filename = 'laporan-inventaris-aset.csv') {
-  if (!assets || assets.length === 0) return;
-
-  const headers = [
-    'Kode Aset',
-    'Nama Barang',
-    'Kategori',
-    'Lokasi',
-    'Penanggung Jawab / Pemegang',
-    'Merek',
-    'Nomor Seri',
-    'Kondisi',
-    'Status',
-    'Harga Pengadaan (Rp)',
-    'Tanggal Pengadaan',
-    'Spesifikasi'
+  const wsDetail = XLSX.utils.json_to_sheet(detailRows);
+  wsDetail['!cols'] = [
+    { wch: 6 },
+    { wch: 16 },
+    { wch: 32 },
+    { wch: 22 },
+    { wch: 22 },
+    { wch: 12 },
+    { wch: 16 },
+    { wch: 24 },
+    { wch: 18 }
   ];
 
-  const rows = assets.map((a) => {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan');
+  XLSX.utils.book_append_sheet(wb, wsDetail, 'Rincian_Aset');
+
+  const safeFilename = filename.endsWith('.xlsx')
+    ? filename
+    : `${filename.replace(/\.[^/.]+$/, '')}.xlsx`;
+  XLSX.writeFile(wb, safeFilename);
+}
+
+/**
+ * Standard Full Asset Inventory Excel (.xlsx) export
+ */
+export function exportAssetsToExcel(assets: Asset[], filename = 'laporan-inventaris-aset.xlsx') {
+  if (!assets || assets.length === 0) return;
+
+  const data = assets.map((a, idx) => {
     let specStr = a.specification || '';
     if (!specStr && a.specificAttributes) {
       specStr = Object.values(a.specificAttributes).filter(Boolean).join(' | ');
@@ -105,36 +128,108 @@ export function exportAssetsToExcel(assets: Asset[], filename = 'laporan-inventa
     const loc = a.location || a.locationName || '-';
     const pic = a.assignedTo || a.assignedUserName || '-';
 
-    return [
-      `"${a.assetTag}"`,
-      `"${a.name.replace(/"/g, '""')}"`,
-      `"${(a.category || a.categorySlug || '').toUpperCase()}"`,
-      `"${loc.replace(/"/g, '""')}"`,
-      `"${pic.replace(/"/g, '""')}"`,
-      `"${(a.brand || '-').replace(/"/g, '""')}"`,
-      `"${(a.serialNumber || '-').replace(/"/g, '""')}"`,
-      `"${a.condition}"`,
-      `"${a.status}"`,
-      a.purchasePrice || 0,
-      `"${a.purchaseDate || ''}"`,
-      `"${specStr.replace(/"/g, '""')}"`
-    ].join(';'); // Semicolon delimiter works seamlessly for Indonesian/European Excel
+    return {
+      'No': idx + 1,
+      'Kode Aset': a.assetTag,
+      'Nama Barang': a.name,
+      'Kategori': (a.category || a.categorySlug || '').toUpperCase(),
+      'Lokasi': loc,
+      'Penanggung Jawab / Pemegang': pic,
+      'Merek': a.brand || '-',
+      'Nomor Seri': a.serialNumber || '-',
+      'Kondisi': a.condition,
+      'Status': a.status,
+      'Harga Pengadaan (Rp)': a.purchasePrice || 0,
+      'Tanggal Pengadaan': a.purchaseDate || '',
+      'Spesifikasi': specStr
+    };
   });
 
-  // UTF-8 BOM for Microsoft Excel
-  const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\r\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename.endsWith('.csv') ? filename : `${filename}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = [
+    { wch: 6 },
+    { wch: 16 },
+    { wch: 32 },
+    { wch: 18 },
+    { wch: 24 },
+    { wch: 26 },
+    { wch: 16 },
+    { wch: 18 },
+    { wch: 12 },
+    { wch: 16 },
+    { wch: 24 },
+    { wch: 18 },
+    { wch: 40 }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data_Aset');
+
+  const safeFilename = filename.endsWith('.xlsx')
+    ? filename
+    : `${filename.replace(/\.[^/.]+$/, '')}.xlsx`;
+  XLSX.writeFile(wb, safeFilename);
 }
 
-// Backwards compatibility
+// Backwards compatibility alias
 export const exportAssetsToCSV = exportAssetsToExcel;
+
+/**
+ * Asset Depreciation & Book Value Excel (.xlsx) export
+ */
+export function exportDepreciationToExcel(
+  assets: Asset[],
+  filename = 'laporan-penyusutan-nilai-buku-aset.xlsx'
+) {
+  const data = (assets || []).filter((a) => a.status !== 'Dihapusbukukan');
+  if (data.length === 0) return;
+
+  const rows = data.map((a, idx) => {
+    const dep = calculateAssetDepreciation(a);
+    const loc = a.location || a.locationName || '-';
+
+    return {
+      'No': idx + 1,
+      'Kode Aset': a.assetTag,
+      'Nama Barang': a.name,
+      'Kategori': a.category,
+      'Lokasi': loc,
+      'Tanggal Pengadaan': a.purchaseDate || '',
+      'Harga Pengadaan (Rp)': dep.purchasePrice,
+      'Masa Manfaat (Tahun)': dep.usefulLifeYears,
+      'Penyusutan per Bulan (Rp)': dep.monthlyDepreciation,
+      'Umur Aset (Bulan)': dep.ageInMonths,
+      'Akumulasi Penyusutan (Rp)': dep.accumulatedDepreciation,
+      'Nilai Buku Saat Ini (Rp)': dep.currentBookValue,
+      'Persentase Terdepresiasi': `${dep.depreciationPercentage}%`
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    { wch: 6 },
+    { wch: 16 },
+    { wch: 30 },
+    { wch: 18 },
+    { wch: 22 },
+    { wch: 18 },
+    { wch: 22 },
+    { wch: 20 },
+    { wch: 24 },
+    { wch: 18 },
+    { wch: 24 },
+    { wch: 24 },
+    { wch: 22 }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Penyusutan_Nilai_Buku');
+
+  const safeFilename = filename.endsWith('.xlsx')
+    ? filename
+    : `${filename.replace(/\.[^/.]+$/, '')}.xlsx`;
+  XLSX.writeFile(wb, safeFilename);
+}
 
 export function exportAssetsToPDF(assets: Asset[], title = 'Laporan Inventaris Aset Perusahaan') {
   if (!assets || assets.length === 0) return;
@@ -149,7 +244,9 @@ export function exportAssetsToPDF(assets: Asset[], title = 'Laporan Inventaris A
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
 
-  const tableRows = assets.map((a, idx) => `
+  const tableRows = assets
+    .map(
+      (a, idx) => `
     <tr>
       <td style="text-align: center; font-family: monospace;">${idx + 1}</td>
       <td style="font-weight: bold; font-family: monospace; color: #1e40af;">${escapeHtml(a.assetTag)}</td>
@@ -159,8 +256,8 @@ export function exportAssetsToPDF(assets: Asset[], title = 'Laporan Inventaris A
       <td style="font-weight: 500;">${escapeHtml(a.assignedTo || '-')}</td>
       <td style="text-align: center;">
         <span style="padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: bold; ${
-          a.status === 'Aktif' 
-            ? 'background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;' 
+          a.status === 'Aktif'
+            ? 'background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;'
             : a.status === 'Dalam Perbaikan'
             ? 'background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a;'
             : 'background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;'
@@ -170,7 +267,9 @@ export function exportAssetsToPDF(assets: Asset[], title = 'Laporan Inventaris A
       </td>
       <td style="text-align: right; font-weight: bold;">Rp ${(a.purchasePrice || 0).toLocaleString('id-ID')}</td>
     </tr>
-  `).join('');
+  `
+    )
+    .join('');
 
   const html = `
     <!DOCTYPE html>
@@ -216,8 +315,8 @@ export function exportAssetsToPDF(assets: Asset[], title = 'Laporan Inventaris A
         <div class="summary">
           <div class="summary-item">Total Aset: <span>${assets.length} Unit</span></div>
           <div class="summary-item">Total Nilai Valuasi: <span>Rp ${totalValue.toLocaleString('id-ID')}</span></div>
-          <div class="summary-item">Aset Aktif: <span>${assets.filter(a => a.status === 'Aktif').length} Unit</span></div>
-          <div class="summary-item">Dalam Perbaikan: <span>${assets.filter(a => a.status === 'Dalam Perbaikan').length} Unit</span></div>
+          <div class="summary-item">Aset Aktif: <span>${assets.filter((a) => a.status === 'Aktif').length} Unit</span></div>
+          <div class="summary-item">Dalam Perbaikan: <span>${assets.filter((a) => a.status === 'Dalam Perbaikan').length} Unit</span></div>
         </div>
 
         <table>
@@ -265,57 +364,6 @@ export function exportAssetsToPDF(assets: Asset[], title = 'Laporan Inventaris A
   printWindow.document.close();
 }
 
-export function exportDepreciationToExcel(assets: Asset[], filename = 'laporan-penyusutan-nilai-buku-aset.csv') {
-  if (!assets || assets.length === 0) return;
-
-  const headers = [
-    'Kode Aset',
-    'Nama Barang',
-    'Kategori',
-    'Lokasi',
-    'Tanggal Pengadaan',
-    'Harga Pengadaan (Rp)',
-    'Masa Manfaat (Tahun)',
-    'Penyusutan per Bulan (Rp)',
-    'Umur Aset (Bulan)',
-    'Akumulasi Penyusutan (Rp)',
-    'Nilai Buku Saat Ini (Rp)',
-    'Persentase Terdepresiasi (%)'
-  ];
-
-  const rows = assets
-    .filter(a => a.status !== 'Dihapusbukukan')
-    .map((a) => {
-      const dep = calculateAssetDepreciation(a);
-      const loc = a.location || a.locationName || '-';
-
-      return [
-        `"${a.assetTag}"`,
-        `"${a.name.replace(/"/g, '""')}"`,
-        `"${a.category}"`,
-        `"${loc.replace(/"/g, '""')}"`,
-        `"${a.purchaseDate || ''}"`,
-        dep.purchasePrice,
-        dep.usefulLifeYears,
-        dep.monthlyDepreciation,
-        dep.ageInMonths,
-        dep.accumulatedDepreciation,
-        dep.currentBookValue,
-        `"${dep.depreciationPercentage}%"`
-      ].join(';');
-    });
-
-  const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\r\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename.endsWith('.csv') ? filename : `${filename}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
 export function exportDepreciationToPDF(assets: Asset[], title = 'Laporan Depresiasi & Nilai Buku') {
   const data = (assets || []).filter((a) => a.status !== 'Dihapusbukukan');
   if (data.length === 0) return;
@@ -327,9 +375,10 @@ export function exportDepreciationToPDF(assets: Asset[], title = 'Laporan Depres
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
 
-  const tableRows = data.map((a, idx) => {
-    const dep = calculateAssetDepreciation(a);
-    return `
+  const tableRows = data
+    .map((a, idx) => {
+      const dep = calculateAssetDepreciation(a);
+      return `
     <tr>
       <td style="text-align: center; font-family: monospace;">${idx + 1}</td>
       <td style="font-weight: bold; font-family: monospace; color: #1e40af;">${escapeHtml(a.assetTag)}</td>
@@ -344,7 +393,8 @@ export function exportDepreciationToPDF(assets: Asset[], title = 'Laporan Depres
       <td style="text-align: center;">${dep.depreciationPercentage}%</td>
     </tr>
   `;
-  }).join('');
+    })
+    .join('');
 
   const html = `
     <!DOCTYPE html>
@@ -438,4 +488,3 @@ export function exportDepreciationToPDF(assets: Asset[], title = 'Laporan Depres
   printWindow.document.write(html);
   printWindow.document.close();
 }
-

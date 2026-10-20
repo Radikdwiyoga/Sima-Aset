@@ -73,7 +73,7 @@ export default function ElektronikPage() {
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
             <button
-              onClick={() => exportAssetsToCSV(assets, 'laporan-aset-elektronik.csv')}
+              onClick={() => exportAssetsToCSV(assets, 'laporan-aset-elektronik.xlsx')}
               className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />

@@ -40,6 +40,17 @@ export interface Location {
 export type AssetCondition = 'Baik' | 'Perbaikan' | 'Rusak';
 export type AssetStatus = 'Aktif' | 'Tidak Aktif' | 'Dalam Perbaikan' | 'Tersedia' | 'Dipinjam' | 'Dihapusbukukan';
 
+export interface AssetDocument {
+  id: string;
+  name: string;
+  category: 'Invoice' | 'Garansi' | 'Manual Book' | 'BAST' | 'Foto Fisik' | 'Lainnya';
+  fileType: string;
+  fileSize: string;
+  uploadDate: string;
+  fileData?: string;
+  notes?: string;
+}
+
 export interface AssetHistory {
   id: string;
   date: string;
@@ -73,6 +84,7 @@ export interface Asset {
   notes?: string; // e.g. "Laptop untuk operasional harian"
   quantity?: number;
   specificAttributes?: Record<string, any>; // backwards compatibility
+  documents?: AssetDocument[];
   createdAt?: string;
   updatedAt?: string;
 }

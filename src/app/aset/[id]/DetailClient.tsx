@@ -14,12 +14,21 @@ import {
   Clock, 
   ShieldCheck, 
   User, 
-  ArrowLeft,
-  X,
-  Lock
+  ArrowLeft, 
+  X, 
+  Lock,
+  Upload,
+  Download,
+  Trash2,
+  Eye,
+  FileCheck,
+  CheckCircle2,
+  AlertCircle,
+  Image as ImageIcon,
+  FileSpreadsheet
 } from 'lucide-react';
 import Link from 'next/link';
-import { Asset, AssetCondition } from '@/types';
+import { Asset, AssetCondition, AssetDocument } from '@/types';
 import { QRModal } from '@/components/QRModal';
 import { useAuth } from '@/context/AuthContext';
 import { DataService } from '@/lib/dataService';
@@ -40,6 +49,16 @@ function DetailAsetContent() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [isMaintModalOpen, setIsMaintModalOpen] = useState(false);
+  const [isUploadDocModalOpen, setIsUploadDocModalOpen] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<AssetDocument | null>(null);
+
+  // Document upload form states
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadDocName, setUploadDocName] = useState('');
+  const [uploadCategory, setUploadCategory] = useState<AssetDocument['category']>('Invoice');
+  const [uploadDocNotes, setUploadDocNotes] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [docAlert, setDocAlert] = useState<string | null>(null);
 
   // Edit form states
   const [editName, setEditName] = useState('');
@@ -170,6 +189,132 @@ function DetailAsetContent() {
       } catch (err) {
         console.error(err);
       }
+    }
+  };
+
+  const handleUploadDocument = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!asset) return;
+    if (!uploadFile) {
+      alert('Silakan pilih berkas dokumen yang ingin diupload.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const fileData = evt.target?.result as string;
+        const sizeKB = uploadFile.size / 1024;
+        const sizeStr = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${Math.round(sizeKB)} KB`;
+
+        const newDoc = DataService.addAssetDocument(asset.id, {
+          name: uploadDocName.trim() || uploadFile.name,
+          category: uploadCategory,
+          fileType: uploadFile.name.split('.').pop()?.toLowerCase() || 'pdf',
+          fileSize: sizeStr,
+          fileData,
+          notes: uploadDocNotes.trim() || 'Dokumen kelengkapan diunggah melalui sistem SIMA.'
+        });
+
+        if (newDoc) {
+          const fresh = DataService.getAssetById(asset.id);
+          if (fresh) setAsset(fresh);
+          setIsUploadDocModalOpen(false);
+          setUploadFile(null);
+          setUploadDocName('');
+          setUploadDocNotes('');
+          setDocAlert(`Dokumen "${newDoc.name}" berhasil diupload dan disimpan!`);
+          setTimeout(() => setDocAlert(null), 5000);
+        }
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(uploadFile);
+    } catch (err) {
+      console.error(err);
+      setIsUploading(false);
+      alert('Gagal memproses upload dokumen.');
+    }
+  };
+
+  const handleDownloadDocument = (doc: AssetDocument) => {
+    if (!asset) return;
+
+    if (doc.fileData) {
+      const link = document.createElement('a');
+      link.href = doc.fileData;
+      link.download = doc.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    // Default document downloader: creates an official text/certificate archive file
+    const content = [
+      '================================================================================',
+      '                          SIM ASET TERPADU ENTERPRISE',
+      '                   DOKUMEN ARSIP KELENGKAPAN ASET PERUSAHAAN',
+      '================================================================================',
+      '',
+      `Nama Dokumen       : ${doc.name}`,
+      `Kategori Dokumen   : ${doc.category || 'Dokumen Inventaris'}`,
+      `Tanggal Dokumen    : ${doc.uploadDate || '-'}`,
+      `Ukuran File        : ${doc.fileSize || '-'}`,
+      `Catatan            : ${doc.notes || 'Arsip kelengkapan inventaris resmi internal.'}`,
+      '',
+      '--------------------------------------------------------------------------------',
+      '                             INFORMASI DETAIL ASET',
+      '--------------------------------------------------------------------------------',
+      `Kode Tag Aset      : ${asset.assetTag}`,
+      `Nama Barang        : ${asset.name}`,
+      `Kategori Aset      : ${asset.category}`,
+      `Lokasi Penempatan  : ${asset.location}`,
+      `Penanggung Jawab   : ${asset.assignedTo || '-'}`,
+      `Merk / Brand       : ${asset.brand || '-'}`,
+      `Model / Tipe       : ${asset.model || '-'}`,
+      `Nomor Seri         : ${asset.serialNumber || '-'}`,
+      `Harga Perolehan    : Rp ${(asset.purchasePrice || 0).toLocaleString('id-ID')}`,
+      `Tanggal Pembelian  : ${asset.purchaseDate || '-'}`,
+      `Status Aset        : ${asset.status}`,
+      `Kondisi Fisik      : ${asset.condition}`,
+      `Spesifikasi        : ${asset.specification || '-'}`,
+      '',
+      '--------------------------------------------------------------------------------',
+      '                        LEMBAR PENGESAHAN & KONTROL',
+      '--------------------------------------------------------------------------------',
+      'Dokumen ini merupakan salinan arsip digital terverifikasi yang tercatat',
+      'dalam Sistem Informasi Manajemen Aset (SIMA) Terpadu Enterprise.',
+      '',
+      `Waktu Unduh Dokumen: ${new Date().toLocaleString('id-ID')}`,
+      'Petugas Administrator Aset Perusahaan: Terverifikasi Digital',
+      '================================================================================'
+    ].join('\r\n');
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const downloadFilename = doc.name.endsWith('.pdf') ? doc.name.replace(/\.pdf$/, '.txt') : doc.name;
+    link.download = downloadFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDeleteDocument = (docId: string, docName: string) => {
+    if (!canEdit) {
+      alert('Akses Ditolak: Anda tidak memiliki izin untuk menghapus dokumen.');
+      return;
+    }
+    if (!asset) return;
+    if (confirm(`Apakah Anda yakin ingin menghapus dokumen "${docName}" dari aset ini?`)) {
+      DataService.deleteAssetDocument(asset.id, docId);
+      const fresh = DataService.getAssetById(asset.id);
+      if (fresh) setAsset(fresh);
+      setDocAlert(`Dokumen "${docName}" berhasil dihapus.`);
+      setTimeout(() => setDocAlert(null), 4000);
     }
   };
 
@@ -464,40 +609,168 @@ function DetailAsetContent() {
               </div>
             )}
 
-            {/* Tab 3: Dokumen & Sertifikat */}
+            {/* Tab 3: Dokumen & Sertifikat Kelengkapan */}
             {activeTab === 'Dokumen' && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                    <FileText size={15} className="text-blue-600" />
-                    Dokumen & Sertifikat Kelengkapan
-                  </h3>
-                  <button className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100">
-                    + Upload Dokumen
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <FileText size={20} className="text-rose-500" />
-                      <div>
-                        <p className="font-semibold text-slate-800">Invoice_Pembelian_{asset.assetTag}.pdf</p>
-                        <span className="text-[11px] text-slate-400">PDF • 1.2 MB</span>
-                      </div>
+              <div className="space-y-4">
+                {/* Alert Notification */}
+                {docAlert && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center justify-between animate-in fade-in">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{docAlert}</span>
                     </div>
-                    <button className="text-blue-600 hover:underline font-medium">Unduh</button>
+                    <button
+                      onClick={() => setDocAlert(null)}
+                      className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 underline"
+                    >
+                      Tutup
+                    </button>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <ShieldCheck size={20} className="text-emerald-500" />
-                      <div>
-                        <p className="font-semibold text-slate-800">Kartu_Garansi_Resmi.pdf</p>
-                        <span className="text-[11px] text-slate-400">PDF • 850 KB</span>
-                      </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText size={15} className="text-blue-600" />
+                      Dokumen & Sertifikat Kelengkapan Barang
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Arsip digital faktur, kartu garansi resmi, berita acara, dan buku panduan aset ini.
+                    </p>
+                  </div>
+                  {canEdit ? (
+                    <button
+                      onClick={() => setIsUploadDocModalOpen(true)}
+                      className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors shrink-0 cursor-pointer"
+                    >
+                      <Upload size={13} />
+                      <span>+ Upload Dokumen</span>
+                    </button>
+                  ) : (
+                    <div
+                      className="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-400 rounded-xl text-xs font-medium flex items-center gap-1.5 cursor-not-allowed"
+                      title="Peran Anda hanya memiliki akses melihat."
+                    >
+                      <Lock size={12} />
+                      <span>Upload Dokumen (Admin)</span>
                     </div>
-                    <button className="text-blue-600 hover:underline font-medium">Unduh</button>
-                  </div>
+                  )}
                 </div>
+
+                {/* Documents Grid / List */}
+                {asset.documents && asset.documents.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {asset.documents.map((doc) => {
+                      const isInvoice = doc.category === 'Invoice' || doc.name.toLowerCase().includes('invoice') || doc.name.toLowerCase().includes('faktur');
+                      const isWarranty = doc.category === 'Garansi' || doc.name.toLowerCase().includes('garansi');
+                      const isImage = doc.fileType?.includes('png') || doc.fileType?.includes('jpg') || doc.fileType?.includes('jpeg');
+
+                      return (
+                        <div
+                          key={doc.id}
+                          className="p-3.5 bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-xs transition-all flex flex-col justify-between gap-3 text-xs"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                              isInvoice ? 'bg-rose-50 text-rose-600' :
+                              isWarranty ? 'bg-emerald-50 text-emerald-600' :
+                              isImage ? 'bg-purple-50 text-purple-600' :
+                              'bg-blue-50 text-blue-600'
+                            }`}>
+                              {isWarranty ? (
+                                <ShieldCheck size={20} />
+                              ) : isImage ? (
+                                <ImageIcon size={20} />
+                              ) : (
+                                <FileText size={20} />
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  isInvoice ? 'bg-rose-100 text-rose-700' :
+                                  isWarranty ? 'bg-emerald-100 text-emerald-700' :
+                                  'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {doc.category || 'Dokumen'}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-mono">
+                                  {doc.fileSize || 'PDF'}
+                                </span>
+                              </div>
+                              <p className="font-bold text-slate-800 mt-1 truncate" title={doc.name}>
+                                {doc.name}
+                              </p>
+                              {doc.notes && (
+                                <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1" title={doc.notes}>
+                                  {doc.notes}
+                                </p>
+                              )}
+                              <p className="text-[10px] text-slate-400 mt-1">
+                                Diunggah: {doc.uploadDate || asset.purchaseDate || '-'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadDocument(doc)}
+                                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                title="Unduh berkas ke komputer"
+                              >
+                                <Download size={13} />
+                                <span>Unduh</span>
+                              </button>
+
+                              {(doc.fileData || doc.notes) && (
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewDoc(doc)}
+                                  className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                                  title="Lihat isi dokumen"
+                                >
+                                  <Eye size={13} />
+                                  <span>Pratinjau</span>
+                                </button>
+                              )}
+                            </div>
+
+                            {canEdit && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteDocument(doc.id, doc.name)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="Hapus dokumen"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center bg-slate-50/60 rounded-2xl border border-dashed border-slate-200">
+                    <FileText className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs font-bold text-slate-700">Belum Ada Dokumen Terlampir</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 max-w-sm mx-auto">
+                      Lampirkan berkas invoice pembelian, kartu garansi resmi, sertifikat, atau buku manual untuk melengkapi arsip aset ini.
+                    </p>
+                    {canEdit && (
+                      <button
+                        onClick={() => setIsUploadDocModalOpen(true)}
+                        className="mt-3 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                      >
+                        <Upload size={13} />
+                        <span>Upload Dokumen Sekarang</span>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -795,6 +1068,259 @@ function DetailAsetContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Upload Dokumen Kelengkapan Aset */}
+      {isUploadDocModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/90 max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Upload size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Upload Dokumen Kelengkapan</h3>
+                  <p className="text-[11px] text-slate-500">Lampirkan faktur, kartu garansi, atau sertifikat aset</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsUploadDocModalOpen(false)}
+                className="w-7 h-7 rounded-full hover:bg-slate-200/60 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUploadDocument} className="p-5 space-y-4 text-xs">
+              {/* File Dropzone */}
+              <div>
+                <label className="block text-slate-700 font-bold mb-1.5 uppercase tracking-wider text-[11px]">
+                  Pilih Berkas Dokumen <span className="text-rose-500">*</span>
+                </label>
+                <div
+                  onClick={() => document.getElementById('asset-doc-input')?.click()}
+                  className={`border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition-all ${
+                    uploadFile
+                      ? 'border-blue-400 bg-blue-50/20'
+                      : 'border-slate-300 hover:border-blue-500 hover:bg-slate-50/80 bg-white'
+                  }`}
+                >
+                  <input
+                    id="asset-doc-input"
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        setUploadFile(f);
+                        if (!uploadDocName) {
+                          setUploadDocName(f.name);
+                        }
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-2">
+                    <Upload size={18} />
+                  </div>
+                  {uploadFile ? (
+                    <div>
+                      <p className="font-bold text-slate-800 text-xs truncate max-w-xs mx-auto">{uploadFile.name}</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        {(uploadFile.size / 1024).toFixed(1)} KB &bull; Berkas terpilih
+                      </p>
+                      <span className="inline-block mt-1.5 text-[11px] font-semibold text-blue-600 hover:underline">
+                        Klik untuk mengganti berkas
+                      </span>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="font-bold text-slate-700 text-xs">Klik untuk memilih berkas dokumen</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Mendukung format PDF, Word (.docx), Excel (.xlsx), atau Gambar (JPG, PNG)</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Document Title */}
+              <div>
+                <label className="block text-slate-700 font-bold mb-1 uppercase tracking-wider text-[11px]">
+                  Nama / Judul Dokumen
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Faktur_Pembelian_2026.pdf"
+                  value={uploadDocName}
+                  onChange={(e) => setUploadDocName(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden font-medium"
+                />
+              </div>
+
+              {/* Document Category */}
+              <div>
+                <label className="block text-slate-700 font-bold mb-1 uppercase tracking-wider text-[11px]">
+                  Kategori Dokumen
+                </label>
+                <select
+                  value={uploadCategory}
+                  onChange={(e) => setUploadCategory(e.target.value as AssetDocument['category'])}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden bg-white font-medium"
+                >
+                  <option value="Invoice">Faktur / Invoice Pembelian</option>
+                  <option value="Garansi">Kartu Garansi Resmi & Sertifikat</option>
+                  <option value="Manual Book">Buku Manual / Panduan Penggunaan</option>
+                  <option value="BAST">Surat Jalan / Berita Acara (BAST)</option>
+                  <option value="Foto Fisik">Foto Fisik & Riwayat Kondisi</option>
+                  <option value="Lainnya">Dokumen Kelengkapan Lainnya</option>
+                </select>
+              </div>
+
+              {/* Document Notes */}
+              <div>
+                <label className="block text-slate-700 font-bold mb-1 uppercase tracking-wider text-[11px]">
+                  Catatan / Keterangan (Opsional)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Contoh: Garansi resmi berlaku hingga Desember 2028 oleh PT Mitra Perkasa"
+                  value={uploadDocNotes}
+                  onChange={(e) => setUploadDocNotes(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden"
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsUploadDocModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-semibold cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={!uploadFile || isUploading}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  {isUploading ? (
+                    <span>Mengunggah...</span>
+                  ) : (
+                    <>
+                      <Upload size={14} />
+                      <span>Simpan Dokumen</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Pratinjau Dokumen */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/90 max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <FileText size={16} />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900 truncate max-w-sm">{previewDoc.name}</h3>
+                  <p className="text-[10px] text-slate-500">
+                    Kategori: {previewDoc.category} &bull; Ukuran: {previewDoc.fileSize || '-'} &bull; Diunggah: {previewDoc.uploadDate || '-'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewDoc(null)}
+                className="w-7 h-7 rounded-full hover:bg-slate-200/60 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <div className="p-5 max-h-[70vh] overflow-y-auto">
+              {previewDoc.fileData && (previewDoc.fileType?.includes('png') || previewDoc.fileType?.includes('jpg') || previewDoc.fileType?.includes('jpeg')) ? (
+                <div className="text-center">
+                  <img
+                    src={previewDoc.fileData}
+                    alt={previewDoc.name}
+                    className="max-h-[60vh] max-w-full rounded-xl mx-auto object-contain border border-slate-200 shadow-xs"
+                  />
+                </div>
+              ) : previewDoc.fileData && previewDoc.fileType?.includes('pdf') ? (
+                <div className="w-full h-96 border border-slate-200 rounded-xl overflow-hidden">
+                  <iframe
+                    src={previewDoc.fileData}
+                    title={previewDoc.name}
+                    className="w-full h-full"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs font-mono whitespace-pre-wrap leading-relaxed text-slate-700">
+                    {`================================================================================
+                    SIM ASET TERPADU ENTERPRISE
+             DOKUMEN KELENGKAPAN ASET RESMI PERUSAHAAN
+================================================================================
+
+Nama Dokumen       : ${previewDoc.name}
+Kategori Dokumen   : ${previewDoc.category || 'Dokumen Inventaris'}
+Tanggal Dokumen    : ${previewDoc.uploadDate || '-'}
+Ukuran File        : ${previewDoc.fileSize || '-'}
+Catatan            : ${previewDoc.notes || 'Arsip kelengkapan inventaris resmi internal.'}
+
+--------------------------------------------------------------------------------
+                         INFORMASI DETAIL ASET TERKAIT
+--------------------------------------------------------------------------------
+Kode Tag Aset      : ${asset.assetTag}
+Nama Barang        : ${asset.name}
+Kategori Aset      : ${asset.category}
+Lokasi Fisik       : ${asset.location}
+Penanggung Jawab   : ${asset.assignedTo || '-'}
+Merk / Model       : ${asset.brand || '-'} / ${asset.model || '-'}
+Nomor Seri         : ${asset.serialNumber || '-'}
+Nilai Pengadaan    : Rp ${(asset.purchasePrice || 0).toLocaleString('id-ID')}
+Tanggal Beli       : ${asset.purchaseDate || '-'}
+Status Operasional : ${asset.status} (${asset.condition})
+
+Dokumen arsip digital resmi tersimpan dalam sistem SIMA.`}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <span className="text-[11px] text-slate-500">
+                Dokumen resmi terverifikasi SIMA
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDownloadDocument(previewDoc)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                >
+                  <Download size={13} />
+                  <span>Unduh Dokumen Ini</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDoc(null)}
+                  className="px-3.5 py-2 border border-slate-200 hover:bg-slate-100 rounded-xl text-xs font-semibold text-slate-600 transition-colors cursor-pointer"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

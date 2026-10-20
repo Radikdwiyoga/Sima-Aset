@@ -34,31 +34,31 @@ export default function LaporanPage() {
 
       if (type === 'penyusutan-aset') {
         if (format === 'excel') {
-          exportDepreciationToExcel(data, `Laporan_Depresiasi_Nilai_Buku_SIMA_${date}.csv`);
+          exportDepreciationToExcel(data, `Laporan_Depresiasi_Nilai_Buku_SIMA_${date}.xlsx`);
         } else {
           exportDepreciationToPDF(data, title);
         }
       } else if (type === 'per-kategori') {
         if (format === 'excel') {
-          exportAssetsGroupedToExcel(data, 'category', `Laporan_Per_Kategori_SIMA_${date}.csv`);
+          exportAssetsGroupedToExcel(data, 'category', `Laporan_Per_Kategori_SIMA_${date}.xlsx`);
         } else {
           exportAssetsToPDF([...data].sort((a, b) => a.category.localeCompare(b.category, 'id')), title);
         }
       } else if (type === 'per-lokasi') {
         if (format === 'excel') {
-          exportAssetsGroupedToExcel(data, 'location', `Laporan_Per_Lokasi_SIMA_${date}.csv`);
+          exportAssetsGroupedToExcel(data, 'location', `Laporan_Per_Lokasi_SIMA_${date}.xlsx`);
         } else {
           exportAssetsToPDF([...data].sort((a, b) => (a.location || '').localeCompare(b.location || '', 'id')), title);
         }
       } else if (type === 'kondisi-pemeliharaan') {
         if (format === 'excel') {
-          exportAssetsGroupedToExcel(data, 'condition', `Laporan_Kondisi_Pemeliharaan_SIMA_${date}.csv`);
+          exportAssetsGroupedToExcel(data, 'condition', `Laporan_Kondisi_Pemeliharaan_SIMA_${date}.xlsx`);
         } else {
           exportAssetsToPDF([...data].sort((a, b) => a.condition.localeCompare(b.condition, 'id')), title);
         }
       } else {
         if (format === 'excel') {
-          exportAssetsToExcel(data, `Laporan_${type}_SIMA_${date}.csv`);
+          exportAssetsToExcel(data, `Laporan_${type}_SIMA_${date}.xlsx`);
         } else {
           exportAssetsToPDF(data, title);
         }
@@ -206,7 +206,7 @@ export default function LaporanPage() {
                     className="flex-1 py-2 px-2.5 bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border border-emerald-200/80 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>Excel (.csv)</span>
+                    <span>Excel (.xlsx)</span>
                   </button>
 
                   <button
