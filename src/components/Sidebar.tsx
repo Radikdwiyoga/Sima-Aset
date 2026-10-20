@@ -13,7 +13,6 @@ import {
   Trash2, 
   FileText, 
   Settings,
-  Lock,
   FileCheck2,
   Monitor,
   Cpu,
@@ -39,65 +38,33 @@ interface NavGroup {
 const navGroups: NavGroup[] = [
   {
     items: [
-      {
-        name: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutDashboard
-      }
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard }
     ]
   },
   {
     label: 'INVENTARIS ASET',
     items: [
-      {
-        name: 'Semua Aset',
-        href: '/aset',
-        icon: Layers
-      },
-      {
-        name: 'Perangkat IT',
-        href: '/aset-it',
-        icon: Monitor
-      },
-      {
-        name: 'Elektronik',
-        href: '/elektronik',
-        icon: Cpu
-      },
-      {
-        name: 'Furnitur',
-        href: '/furnitur',
-        icon: Armchair
-      },
-      {
-        name: 'Fasilitas RT',
-        href: '/rumah-tangga',
-        icon: Home
-      }
+      { name: 'Semua Aset', href: '/aset', icon: Layers },
+      { name: 'Perangkat IT', href: '/aset-it', icon: Monitor },
+      { name: 'Elektronik', href: '/elektronik', icon: Cpu },
+      { name: 'Furnitur', href: '/furnitur', icon: Armchair },
+      { name: 'Fasilitas RT', href: '/rumah-tangga', icon: Home }
     ]
   },
   {
     label: 'OPERASIONAL',
     items: [
+      { name: 'Peminjaman', href: '/peminjaman', icon: ArrowLeftRight },
       {
-        name: 'Peminjaman',
-        href: '/peminjaman',
-        icon: ArrowLeftRight
+        name: 'Stock Opname', href: '/stock-opname', icon: FileCheck2,
+        allowedRoles: ['super_admin', 'admin_it', 'admin_ga', 'auditor', 'management']
       },
       {
-        name: 'Stock Opname',
-        href: '/stock-opname',
-        icon: FileCheck2
+        name: 'Pemeliharaan', href: '/pemeliharaan', icon: Wrench,
+        allowedRoles: ['super_admin', 'admin_it', 'admin_ga']
       },
       {
-        name: 'Pemeliharaan',
-        href: '/pemeliharaan',
-        icon: Wrench
-      },
-      {
-        name: 'Penghapusan',
-        href: '/penghapusan',
-        icon: Trash2,
+        name: 'Penghapusan', href: '/penghapusan', icon: Trash2,
         allowedRoles: ['super_admin', 'admin_it', 'management']
       }
     ]
@@ -106,25 +73,19 @@ const navGroups: NavGroup[] = [
     label: 'MASTER & LAPORAN',
     items: [
       {
-        name: 'Kategori',
-        href: '/kategori',
-        icon: Tags
+        name: 'Kategori', href: '/kategori', icon: Tags,
+        allowedRoles: ['super_admin', 'admin_it', 'admin_ga']
       },
       {
-        name: 'Lokasi',
-        href: '/lokasi',
-        icon: MapPin
+        name: 'Lokasi', href: '/lokasi', icon: MapPin,
+        allowedRoles: ['super_admin', 'admin_it', 'admin_ga']
       },
       {
-        name: 'Laporan',
-        href: '/laporan',
-        icon: FileText,
+        name: 'Laporan', href: '/laporan', icon: FileText,
         requiredPermission: 'canViewReports'
       },
       {
-        name: 'Pengaturan',
-        href: '/pengaturan',
-        icon: Settings,
+        name: 'Pengaturan', href: '/pengaturan', icon: Settings,
         requiredPermission: 'canManageUsers'
       }
     ]
@@ -173,29 +134,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href + '/'));
               const Icon = item.icon;
 
-              // Check RBAC permission for this item
-              let isLocked = false;
+              // Check RBAC — hide items the user has no access to
               if (item.requiredPermission && !permissions[item.requiredPermission]) {
-                isLocked = true;
+                return null;
               }
               if (item.allowedRoles && user && !item.allowedRoles.includes(user.role)) {
-                isLocked = true;
-              }
-
-              if (isLocked) {
-                return (
-                  <div
-                    key={item.href}
-                    className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 opacity-60 cursor-not-allowed select-none bg-slate-900/30"
-                    title={`Fitur ${item.name} dibatasi untuk role ${getRoleDisplayName(user?.role)}`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className="w-4 h-4 text-slate-600 shrink-0" />
-                      <span className="truncate">{item.name}</span>
-                    </div>
-                    <Lock className="w-3 h-3 text-slate-500 shrink-0" />
-                  </div>
-                );
+                return null;
               }
 
               return (

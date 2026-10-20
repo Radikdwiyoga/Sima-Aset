@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { RoleGuard } from '@/components/RoleGuard';
-import { ChevronRight, Plus } from 'lucide-react';
+import { ChevronRight, Plus, ImageIcon, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { AssetCondition, AssetStatus } from '@/types';
 import { DataService } from '@/lib/dataService';
@@ -27,6 +27,24 @@ export default function TambahAsetPage() {
   const [specification, setSpecification] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<string>('');
+  const [imagePreview, setImagePreview] = useState<string>('');
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Ukuran foto maksimal 2MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setImageFile(base64);
+      setImagePreview(base64);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +63,6 @@ export default function TambahAsetPage() {
 
     const finalTag = assetTag.trim() || `${prefixMap[category] || 'AST'}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // Resolve categorySlug from the master categories (fallback: explicit name map)
     const slugByName: Record<string, string> = {
       'Perangkat IT': 'it',
       'Furniture': 'furniture',
@@ -61,12 +78,17 @@ export default function TambahAsetPage() {
     );
     const categorySlug = masterCat?.slug || slugByName[category] || 'lainnya';
 
-    // Resolve locationId by name so counts stay correct for every location
     const masterLocs = DataService.getLocations();
     const matchedLoc =
       masterLocs.find((l) => l.name.toLowerCase() === location.toLowerCase()) ||
       masterLocs.find((l) => location.toLowerCase().includes(l.name.toLowerCase())) ||
       DataService.createLocation({ name: location.trim() || 'Kantor Pusat' });
+
+    const defaultImage = category === 'Perangkat IT'
+      ? 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=400&auto=format&fit=crop&q=80'
+      : category === 'Kendaraan'
+      ? 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400&auto=format&fit=crop&q=80'
+      : 'https://images.unsplash.com/photo-1580481077195-c3a821a506cb?w=400&auto=format&fit=crop&q=80';
 
     try {
       DataService.createAsset({
@@ -87,11 +109,7 @@ export default function TambahAsetPage() {
         assignedTo,
         specification,
         notes,
-        image: category === 'Perangkat IT' 
-          ? 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=400&auto=format&fit=crop&q=80'
-          : category === 'Kendaraan'
-          ? 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400&auto=format&fit=crop&q=80'
-          : 'https://images.unsplash.com/photo-1580481077195-c3a821a506cb?w=400&auto=format&fit=crop&q=80'
+        image: imageFile || defaultImage
       });
       router.push('/aset');
     } catch (err) {
@@ -121,7 +139,7 @@ export default function TambahAsetPage() {
             </div>
           </div>
 
-          {/* Form Card (Matching Screen 4) */}
+          {/* Form Card */}
           <div className="bg-white rounded-2xl p-4 sm:p-7 border border-slate-200/80 shadow-xs w-full">
             <h2 className="text-lg font-bold text-slate-900 mb-6 pb-4 border-b border-slate-100 flex items-center gap-2">
               <Plus className="w-5 h-5 text-blue-600" />
@@ -159,7 +177,7 @@ export default function TambahAsetPage() {
                     <option value="Furniture">Furniture</option>
                     <option value="Kendaraan">Kendaraan</option>
                     <option value="Elektronik">Elektronik</option>
-                    <option value="Mesin & Peralatan">Mesin & Peralatan</option>
+                    <option value="Mesin & Peralatan">Mesin &amp; Peralatan</option>
                     <option value="Lainnya">Lainnya</option>
                   </select>
                 </div>
@@ -313,6 +331,49 @@ export default function TambahAsetPage() {
                 </div>
               </div>
 
+              {/* Upload Foto Aset */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1.5">
+                  Foto Aset <span className="text-slate-400 font-normal">(Opsional, maks. 2MB)</span>
+                </label>
+                <div className="flex items-start gap-4">
+                  {imagePreview ? (
+                    <div className="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-blue-200 shrink-0">
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => { setImageFile(''); setImagePreview(''); }}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold hover:bg-red-600 cursor-pointer"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-32 h-32 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400 shrink-0">
+                      <ImageIcon className="w-8 h-8 mb-1 text-slate-300" />
+                      <span className="text-xs font-medium">Belum ada foto</span>
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      id="asset-image-upload"
+                    />
+                    <label
+                      htmlFor="asset-image-upload"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer transition-colors"
+                    >
+                      <Upload className="w-4 h-4 text-slate-500" />
+                      Pilih Foto Aset
+                    </label>
+                    <p className="text-xs text-slate-400 mt-2">Format: JPG, PNG, WebP. Maks 2MB. Foto akan ditampilkan di detail aset.</p>
+                  </div>
+                </div>
+              </div>
+
               {/* Spesifikasi Teknis */}
               <div>
                 <label className="block font-bold text-slate-700 mb-1.5">
@@ -330,7 +391,7 @@ export default function TambahAsetPage() {
               {/* Keterangan Tambahan */}
               <div>
                 <label className="block font-bold text-slate-700 mb-1.5">
-                  Keterangan & Catatan Khusus
+                  Keterangan &amp; Catatan Khusus
                 </label>
                 <textarea
                   rows={2}
@@ -346,14 +407,14 @@ export default function TambahAsetPage() {
                 <button
                   type="button"
                   onClick={() => router.push('/aset')}
-                  className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                  className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm shadow-blue-500/20 disabled:opacity-50"
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm shadow-blue-500/20 disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? 'Menyimpan...' : 'Simpan Aset'}
                 </button>

@@ -33,9 +33,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen w-full flex bg-[#F8FAFC] text-slate-800 antialiased overflow-x-hidden">
-      {/* Desktop Sidebar */}
-      <div className="hidden md:block shrink-0 sticky top-0 h-screen z-30">
+    <div className="h-screen w-full flex overflow-hidden bg-[#F8FAFC] text-slate-800 antialiased">
+      {/* Desktop Sidebar - Always full height and never cut off */}
+      <div className="hidden md:flex shrink-0 h-full z-30">
         <Sidebar />
       </div>
 
@@ -49,16 +49,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           />
 
           {/* Drawer content */}
-          <div className="relative z-10 flex">
+          <div className="relative z-10 flex h-full">
             <Sidebar onNavigate={() => setIsMobileMenuOpen(false)} />
           </div>
         </div>
       )}
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
+      {/* Main Content Area - Scrollable viewport */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         <Navbar onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
-        <main className="flex-1 p-3.5 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto box-border">
+        <main className="flex-1 overflow-y-auto p-3.5 sm:p-6 lg:p-8 w-full max-w-[1600px] mx-auto box-border">
           {children}
         </main>
       </div>
