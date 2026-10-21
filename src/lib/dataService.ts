@@ -115,11 +115,33 @@ export function saveStoredUsers(users: User[]): void {
 }
 
 export function getStoredLocations(): Location[] {
-  if (!isBrowser()) return initialDb.locations as Location[];
+  const defaults = (initialDb.locations as Location[]) || [];
+  if (!isBrowser()) return defaults;
   const stored = localStorage.getItem(STORAGE_KEYS.LOCATIONS);
   if (stored) {
     try {
-      return JSON.parse(stored);
+      let list: Location[] = JSON.parse(stored);
+      // Ensure loc-1 or any Kantor Pusat is synced to Menara BRIPens
+      let modified = false;
+      list = list.map(l => {
+        if (l.id === 'loc-1' && (l.name === 'Kantor Pusat' || !l.name.includes('BRIPens'))) {
+          modified = true;
+          return {
+            ...l,
+            name: 'Kantor Pusat - Menara BRIPens',
+            description: 'Kantor Pusat SIMA di Menara BRIPens (ex Menara Mulia)',
+            address: 'Menara BRIPens, Jl. Jend. Gatot Subroto Kav. 9-11, Karet Semanggi, Setiabudi, Jakarta Selatan 12930',
+            city: 'Jakarta Selatan',
+            latitude: -6.224041,
+            longitude: 106.816902
+          };
+        }
+        return l;
+      });
+      if (modified) {
+        localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(list));
+      }
+      return list;
     } catch {}
   }
   localStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(initialDb.locations));
@@ -230,12 +252,54 @@ export function saveStoredMaintenanceLogs(logs: MaintenanceLog[]): void {
 
 export const DataService = {
   getAssets(filters?: { category?: string; location?: string; status?: string; search?: string }): Asset[] {
-    let list = getStoredAssets().map((a) => ({
-      ...a,
-      specificAttributes: a.specificAttributes || {},
-      locationName: a.locationName || a.location || '-',
-      assignedUserName: a.assignedUserName || a.assignedTo || '-',
-    }));
+    const masterLocations = this.getLocations();
+    const bripensLoc = masterLocations.find(l => 
+      l.name.toLowerCase().includes('bripens') || 
+      (l.address && l.address.toLowerCase().includes('bripens')) ||
+      l.id === 'loc-1'
+    );
+
+    let rawList = getStoredAssets();
+    let hasAssetChanges = false;
+
+    let list = rawList.map((a) => {
+      let locId = a.locationId;
+      let matchedLoc = locId ? masterLocations.find(l => l.id === locId) : undefined;
+      
+      if (!matchedLoc && a.location) {
+        matchedLoc = masterLocations.find(l => 
+          l.name.toLowerCase() === a.location.toLowerCase() ||
+          a.location.toLowerCase().includes(l.name.toLowerCase()) ||
+          l.name.toLowerCase().includes(a.location.toLowerCase())
+        );
+      }
+
+      // If location is Kantor Pusat or was linked to loc-1, connect to Menara BRIPens location
+      if (!matchedLoc && (!a.location || a.location.toLowerCase().includes('kantor pusat') || a.location.toLowerCase().includes('bripens'))) {
+        matchedLoc = bripensLoc;
+      }
+
+      const finalLocName = matchedLoc ? matchedLoc.name : (a.locationName || a.location || 'Kantor Pusat - Menara BRIPens');
+      const finalLocId = matchedLoc ? matchedLoc.id : (bripensLoc ? bripensLoc.id : 'loc-1');
+
+      if (a.location !== finalLocName || a.locationId !== finalLocId || a.locationName !== finalLocName) {
+        hasAssetChanges = true;
+      }
+
+      return {
+        ...a,
+        locationId: finalLocId,
+        location: finalLocName,
+        locationName: finalLocName,
+        specificAttributes: a.specificAttributes || {},
+        assignedUserName: a.assignedUserName || a.assignedTo || '-',
+      };
+    });
+
+    if (hasAssetChanges && isBrowser()) {
+      saveStoredAssets(list);
+    }
+
     if (!filters) return list;
 
     if (filters.category && filters.category !== 'Semua') {
@@ -681,11 +745,18 @@ export const DataService = {
         longitude: loc.longitude !== undefined ? loc.longitude : def?.longitude,
         address: loc.address || def?.address,
         city: loc.city || def?.city,
-        // Count by locationId when present; fall back to name match only for
-        // legacy assets that have no locationId (avoids double-counting).
-        count: assets.filter(a =>
-          a.locationId ? a.locationId === loc.id : (a.location || '').toLowerCase().includes(loc.name.toLowerCase())
-        ).length
+        count: assets.filter(a => {
+          if (a.locationId === loc.id) return true;
+          if (a.location && (
+            a.location.toLowerCase() === loc.name.toLowerCase() ||
+            a.location.toLowerCase().includes(loc.name.toLowerCase()) ||
+            loc.name.toLowerCase().includes(a.location.toLowerCase())
+          )) return true;
+          if ((loc.name.toLowerCase().includes('bripens') || loc.id === 'loc-1') && (
+            !a.location || a.location.toLowerCase().includes('kantor pusat')
+          )) return true;
+          return false;
+        }).length
       };
     });
   },

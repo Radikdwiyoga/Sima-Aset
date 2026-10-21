@@ -112,13 +112,13 @@
   "locations": [
     {
       "id": "loc-1",
-      "name": "Kantor Pusat",
-      "description": "Lokasi utama perusahaan",
+      "name": "Kantor Pusat - Menara BRIPens",
+      "description": "Kantor Pusat SIMA di Menara BRIPens (ex Menara Mulia)",
       "count": 420,
-      "latitude": -6.175392,
-      "longitude": 106.827153,
-      "address": "Jl. Medan Merdeka Barat No. 12, Gambir, Jakarta Pusat",
-      "city": "Jakarta Pusat"
+      "latitude": -6.224041,
+      "longitude": 106.816902,
+      "address": "Menara BRIPens, Jl. Jend. Gatot Subroto Kav. 9-11, Karet Semanggi, Setiabudi, Jakarta Selatan 12930",
+      "city": "Jakarta Selatan"
     },
     {
       "id": "loc-2",
@@ -178,7 +178,7 @@
       "name": "Laptop Dell Latitude 5520",
       "category": "Perangkat IT",
       "categorySlug": "it",
-      "location": "Kantor Pusat - Divisi IT",
+      "location": "Kantor Pusat - Menara BRIPens",
       "locationId": "loc-1",
       "purchaseDate": "12 Januari 2024",
       "purchasePrice": 15000000,
@@ -192,7 +192,8 @@
       "notes": "Laptop untuk operasional harian",
       "image": "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=400&auto=format&fit=crop&q=80",
       "createdAt": "2024-01-12T08:00:00Z",
-      "updatedAt": "2026-10-16T08:00:00Z"
+      "updatedAt": "2026-10-16T08:00:00Z",
+      "locationName": "Kantor Pusat - Menara BRIPens"
     },
     {
       "id": "ast-2",
@@ -200,7 +201,7 @@
       "name": "PC Workstation",
       "category": "Perangkat IT",
       "categorySlug": "it",
-      "location": "Kantor Pusat",
+      "location": "Kantor Pusat - Menara BRIPens",
       "locationId": "loc-1",
       "purchaseDate": "15 Feb 2024",
       "purchasePrice": 28000000,
@@ -214,7 +215,8 @@
       "notes": "Komputer rendering dan video editing",
       "image": "https://images.unsplash.com/photo-1593640408182-31c70c8268f5?w=400&auto=format&fit=crop&q=80",
       "createdAt": "2024-02-15T08:00:00Z",
-      "updatedAt": "2026-10-16T08:00:00Z"
+      "updatedAt": "2026-10-16T08:00:00Z",
+      "locationName": "Kantor Pusat - Menara BRIPens"
     },
     {
       "id": "ast-3",
@@ -236,7 +238,8 @@
       "notes": "Meja kerja modular",
       "image": "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=400&auto=format&fit=crop&q=80",
       "createdAt": "2023-03-10T08:00:00Z",
-      "updatedAt": "2026-10-16T08:00:00Z"
+      "updatedAt": "2026-10-16T08:00:00Z",
+      "locationName": "Cabang A"
     },
     {
       "id": "ast-4",
@@ -244,7 +247,7 @@
       "name": "Toyota Avanza",
       "category": "Kendaraan",
       "categorySlug": "kendaraan",
-      "location": "Kantor Pusat",
+      "location": "Kantor Pusat - Menara BRIPens",
       "locationId": "loc-1",
       "purchaseDate": "05 Jan 2022",
       "purchasePrice": 220000000,
@@ -258,7 +261,8 @@
       "notes": "Mobil dinas operasional kantor pusat",
       "image": "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=400&auto=format&fit=crop&q=80",
       "createdAt": "2022-01-05T08:00:00Z",
-      "updatedAt": "2026-10-16T08:00:00Z"
+      "updatedAt": "2026-10-16T08:00:00Z",
+      "locationName": "Kantor Pusat - Menara BRIPens"
     },
     {
       "id": "ast-5",
@@ -280,7 +284,8 @@
       "notes": "Lampu optik proyektor sedang diganti oleh vendor rekanan",
       "image": "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=400&auto=format&fit=crop&q=80",
       "createdAt": "2023-08-12T08:00:00Z",
-      "updatedAt": "2026-10-16T08:00:00Z"
+      "updatedAt": "2026-10-16T08:00:00Z",
+      "locationName": "Ruang Rapat"
     },
     {
       "id": "ast-6",
@@ -288,7 +293,7 @@
       "name": "Printer HP LaserJet Pro",
       "category": "Perangkat IT",
       "categorySlug": "it",
-      "location": "Kantor Pusat",
+      "location": "Kantor Pusat - Menara BRIPens",
       "locationId": "loc-1",
       "purchaseDate": "15 Aug 2020",
       "purchasePrice": 4500000,
@@ -302,7 +307,8 @@
       "notes": "Komponen roller rusak berat, proses pengajuan penghapusan aset",
       "image": "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=400&auto=format&fit=crop&q=80",
       "createdAt": "2020-08-15T08:00:00Z",
-      "updatedAt": "2026-10-16T08:00:00Z"
+      "updatedAt": "2026-10-16T08:00:00Z",
+      "locationName": "Kantor Pusat - Menara BRIPens"
     }
   ],
   "histories": [

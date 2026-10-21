@@ -35,7 +35,8 @@ export function AssetDetailModal({
 
   // Edit fields
   const [name, setName] = useState('');
-  const [locationName, setLocationName] = useState('');
+  const [masterLocations, setMasterLocations] = useState<any[]>([]);
+  const [selectedLocationId, setSelectedLocationId] = useState('');
   const [assignedUserName, setAssignedUserName] = useState('');
   const [condition, setCondition] = useState<AssetCondition>('Baik');
   const [status, setStatus] = useState<AssetStatus>('Aktif');
@@ -44,7 +45,10 @@ export function AssetDetailModal({
   React.useEffect(() => {
     if (asset) {
       setName(asset.name);
-      setLocationName(asset.locationName || asset.location || '');
+      const locs = DataService.getLocations();
+      setMasterLocations(locs);
+      const matched = locs.find(l => l.id === asset.locationId || l.name === (asset.locationName || asset.location));
+      setSelectedLocationId(matched ? matched.id : (locs[0]?.id || 'loc-1'));
       setAssignedUserName(asset.assignedUserName || asset.assignedTo || '');
       setCondition(asset.condition);
       setStatus(asset.status);
@@ -58,9 +62,12 @@ export function AssetDetailModal({
   const handleSave = async () => {
     setLoading(true);
     try {
+      const chosenLoc = masterLocations.find(l => l.id === selectedLocationId) || masterLocations[0];
       DataService.updateAsset(asset.id, {
         name,
-        location: locationName,
+        location: chosenLoc?.name || 'Kantor Pusat - Menara BRIPens',
+        locationName: chosenLoc?.name || 'Kantor Pusat - Menara BRIPens',
+        locationId: chosenLoc?.id || 'loc-1',
         assignedTo: assignedUserName || undefined,
         condition,
         status,
@@ -152,13 +159,18 @@ export function AssetDetailModal({
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Lokasi Ruangan</label>
-                    <input
-                      type="text"
-                      value={locationName}
-                      onChange={(e) => setLocationName(e.target.value)}
-                      className="w-full p-2 border border-slate-200 rounded-lg text-xs"
-                    />
+                    <label className="block font-semibold text-slate-700 mb-1">Lokasi Penempatan</label>
+                    <select
+                      value={selectedLocationId}
+                      onChange={(e) => setSelectedLocationId(e.target.value)}
+                      className="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white cursor-pointer"
+                    >
+                      {masterLocations.map((loc) => (
+                        <option key={loc.id} value={loc.id}>
+                          {loc.name} {loc.city ? `(${loc.city})` : ''}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">Pemegang (PIC)</label>

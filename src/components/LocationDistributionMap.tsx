@@ -461,3 +461,4 @@ export function LocationDistributionMap({
     </div>
   );
 }
+

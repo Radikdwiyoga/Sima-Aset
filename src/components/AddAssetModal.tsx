@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus } from 'lucide-react';
 import { CategorySlug, AssetCondition, AssetStatus } from '@/types';
 import { DataService } from '@/lib/dataService';
@@ -21,7 +21,16 @@ export function AddAssetModal({
   const [category, setCategory] = useState<CategorySlug>(defaultCategory);
   const [assetTag, setAssetTag] = useState('');
   const [name, setName] = useState('');
-  const [locationName, setLocationName] = useState('Gedung A - Lantai 2');
+  const [masterLocations, setMasterLocations] = useState<any[]>([]);
+  const [selectedLocationId, setSelectedLocationId] = useState('loc-1');
+
+  useEffect(() => {
+    const locs = DataService.getLocations();
+    setMasterLocations(locs);
+    if (locs.length > 0) {
+      setSelectedLocationId(locs[0].id);
+    }
+  }, [isOpen]);
   const [assignedUserName, setAssignedUserName] = useState('');
   const [brand, setBrand] = useState('');
   const purchasePrice = 0;
@@ -81,11 +90,7 @@ export function AddAssetModal({
     };
     const finalTag = assetTag.trim() || `${prefixMap[category] || 'AST'}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // Resolve locationId from the typed location name (no more hard-coded loc-1)
-    const masterLocations = DataService.getLocations();
-    const matchedLoc = masterLocations.find(
-      (l) => l.name.toLowerCase() === locationName.trim().toLowerCase()
-    );
+    const matchedLoc = masterLocations.find((l) => l.id === selectedLocationId) || masterLocations[0] || { id: 'loc-1', name: 'Kantor Pusat - Menara BRIPens' };
 
     const specificAttributes: Record<string, any> = {};
     if (category === 'it') {
@@ -102,8 +107,7 @@ export function AddAssetModal({
     }
 
     try {
-      // Register an unknown typed location so location counts stay truthful
-      const location = matchedLoc || DataService.createLocation({ name: locationName.trim() || 'Kantor Pusat' });
+      const location = matchedLoc;
 
       DataService.createAsset({
         assetTag: finalTag,
@@ -217,13 +221,17 @@ export function AddAssetModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Lokasi Penempatan</label>
-              <input
-                type="text"
-                value={locationName}
-                onChange={(e) => setLocationName(e.target.value)}
-                placeholder="Gedung A - Lantai 2"
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs"
-              />
+              <select
+                value={selectedLocationId}
+                onChange={(e) => setSelectedLocationId(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs bg-white cursor-pointer"
+              >
+                {masterLocations.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.name} {loc.city ? `(${loc.city})` : ''}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Pemegang (PIC/Karyawan)</label>

@@ -138,8 +138,12 @@ function DetailAsetContent() {
     if (!asset || !newLocation) return;
 
     try {
+      const masterLocs = DataService.getLocations();
+      const chosen = masterLocs.find((l) => l.name === newLocation || l.id === newLocation);
       const updated = DataService.updateAsset(asset.id, {
-        location: newLocation,
+        location: chosen ? chosen.name : newLocation,
+        locationName: chosen ? chosen.name : newLocation,
+        locationId: chosen ? chosen.id : asset.locationId,
       });
       if (updated) {
         setAsset(updated);
@@ -978,15 +982,13 @@ function DetailAsetContent() {
                 <select
                   value={newLocation}
                   onChange={(e) => setNewLocation(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-hidden"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-hidden bg-white cursor-pointer"
                 >
-                  <option value="Kantor Pusat">Kantor Pusat</option>
-                  <option value="Kantor Pusat - Divisi IT">Kantor Pusat - Divisi IT</option>
-                  <option value="Cabang A">Cabang A</option>
-                  <option value="Cabang B">Cabang B</option>
-                  <option value="Gudang Utama">Gudang Utama</option>
-                  <option value="Ruang Rapat">Ruang Rapat</option>
-                  <option value="Lainnya">Lainnya</option>
+                  {DataService.getLocations().map((loc) => (
+                    <option key={loc.id} value={loc.name}>
+                      {loc.name} {loc.city ? `(${loc.city})` : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">

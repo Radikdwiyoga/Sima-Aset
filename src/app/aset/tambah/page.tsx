@@ -6,16 +6,17 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { RoleGuard } from '@/components/RoleGuard';
 import { ChevronRight, Plus, ImageIcon, Upload } from 'lucide-react';
 import Link from 'next/link';
-import { AssetCondition, AssetStatus } from '@/types';
+import { AssetCondition, AssetStatus, Location } from '@/types';
 import { DataService } from '@/lib/dataService';
 
 export default function TambahAsetPage() {
   const router = useRouter();
 
+  const [availableLocations, setAvailableLocations] = useState<Location[]>([]);
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Perangkat IT');
   const [assetTag, setAssetTag] = useState('');
-  const [location, setLocation] = useState('Kantor Pusat');
+  const [locationId, setLocationId] = useState('');
   const [purchaseDate, setPurchaseDate] = useState('2026-10-16');
   const [purchasePrice, setPurchasePrice] = useState('');
   const [condition, setCondition] = useState<AssetCondition>('Baik');
@@ -29,6 +30,14 @@ export default function TambahAsetPage() {
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<string>('');
   const [imagePreview, setImagePreview] = useState<string>('');
+
+  React.useEffect(() => {
+    const locs = DataService.getLocations();
+    setAvailableLocations(locs);
+    if (locs.length > 0) {
+      setLocationId(locs[0].id);
+    }
+  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -78,11 +87,11 @@ export default function TambahAsetPage() {
     );
     const categorySlug = masterCat?.slug || slugByName[category] || 'lainnya';
 
-    const masterLocs = DataService.getLocations();
+    const masterLocs = availableLocations.length > 0 ? availableLocations : DataService.getLocations();
     const matchedLoc =
-      masterLocs.find((l) => l.name.toLowerCase() === location.toLowerCase()) ||
-      masterLocs.find((l) => location.toLowerCase().includes(l.name.toLowerCase())) ||
-      DataService.createLocation({ name: location.trim() || 'Kantor Pusat' });
+      masterLocs.find((l) => l.id === locationId) ||
+      masterLocs[0] ||
+      DataService.createLocation({ name: 'Kantor Pusat - Menara BRIPens' });
 
     const defaultImage = category === 'Perangkat IT'
       ? 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=400&auto=format&fit=crop&q=80'
@@ -96,8 +105,8 @@ export default function TambahAsetPage() {
         name: name.trim(),
         category,
         categorySlug,
-        location,
-        locationName: location,
+        location: matchedLoc.name,
+        locationName: matchedLoc.name,
         locationId: matchedLoc.id,
         purchaseDate,
         purchasePrice: Number(purchasePrice) || 0,
@@ -202,14 +211,15 @@ export default function TambahAsetPage() {
                     Lokasi Penempatan <span className="text-rose-500">*</span>
                   </label>
                   <select
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
+                    value={locationId}
+                    onChange={(e) => setLocationId(e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium cursor-pointer"
                   >
-                    <option value="Kantor Pusat">Kantor Pusat - Divisi IT</option>
-                    <option value="Cabang A">Cabang A - Ruang Rapat</option>
-                    <option value="Cabang B">Cabang B - Pool Armada</option>
-                    <option value="Gudang">Gudang Utama</option>
+                    {availableLocations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.name} {loc.city ? `(${loc.city})` : ''}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
