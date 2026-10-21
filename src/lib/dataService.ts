@@ -249,13 +249,19 @@ export const DataService = {
       list = list.filter((a) => a.status === filters.status);
     }
     if (filters.search) {
-      const q = filters.search.toLowerCase();
+      const q = filters.search.toLowerCase().trim();
       list = list.filter(
         (a) =>
           a.name.toLowerCase().includes(q) ||
           a.assetTag.toLowerCase().includes(q) ||
           (a.serialNumber && a.serialNumber.toLowerCase().includes(q)) ||
-          (a.assignedTo && a.assignedTo.toLowerCase().includes(q))
+          (a.assignedTo && a.assignedTo.toLowerCase().includes(q)) ||
+          (a.assignedUserName && a.assignedUserName.toLowerCase().includes(q)) ||
+          (a.location && a.location.toLowerCase().includes(q)) ||
+          (a.locationName && a.locationName.toLowerCase().includes(q)) ||
+          (a.brand && a.brand.toLowerCase().includes(q)) ||
+          (a.model && a.model.toLowerCase().includes(q)) ||
+          (a.category && a.category.toLowerCase().includes(q))
       );
     }
     return list;

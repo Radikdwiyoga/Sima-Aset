@@ -6,9 +6,10 @@ import {
   Search, 
   Plus, 
   QrCode, 
-  MoreVertical, 
-  Wrench, 
-  Download
+  Download,
+  Eye,
+  Printer,
+  Cpu
 } from 'lucide-react';
 import { Asset } from '@/types';
 import { QRModal } from '@/components/QRModal';
@@ -46,27 +47,43 @@ export default function ElektronikPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 w-full">
-        {/* Header */}
+        {/* Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Aset Elektronik</h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Air Conditioner (AC), Smart TV, Proyektor, CCTV, dan Sound System
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+              <Cpu className="w-6 h-6 text-blue-600" />
+              <span>Aset Elektronik</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Air Conditioner (AC), Smart TV, proyektor ruang rapat, CCTV, dan sound system
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
             <button
               onClick={() => exportAssetsToCSV(assets, 'laporan-aset-elektronik.xlsx')}
-              className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+              className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />
-              <span>Ekspor CSV</span>
+              <span>Ekspor Excel</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (assets.length > 0) {
+                  setSelectedAssetForQR(assets[0]);
+                  setIsQRModalOpen(true);
+                }
+              }}
+              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Cetak Label QR</span>
             </button>
 
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-blue-500/20"
+              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-blue-500/20 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>+ Tambah Elektronik</span>
@@ -74,127 +91,128 @@ export default function ElektronikPage() {
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between gap-3">
+        {/* Filter & Search Bar */}
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="relative w-full sm:w-80">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Cari aset elektronik, AC, TV, proyektor..."
+              placeholder="Cari aset elektronik, AC, TV, proyektor, CCTV..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-50 text-xs text-slate-800 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-50 text-xs text-slate-800 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
             />
           </div>
-          <span className="text-xs text-slate-500 font-medium">
-            Total: <span className="font-bold text-slate-800">{assets.length}</span> unit
+          <span className="text-xs font-semibold text-slate-500 self-end sm:self-auto">
+            Total Elektronik: <span className="text-slate-900 font-bold">{assets.length}</span> Unit
           </span>
         </div>
 
-        {/* Table View (Matching Mockup 5) */}
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+        {/* Table View */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/80 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-200/80">
+              <thead className="bg-slate-50/80 text-slate-500 uppercase text-[10px] tracking-wider border-b border-slate-200/80 font-bold">
                 <tr>
-                  <th className="py-3 px-4 font-semibold">Aset</th>
-                  <th className="py-3 px-4 font-semibold">Nama</th>
-                  <th className="py-3 px-4 font-semibold">Spesifikasi & Daya</th>
-                  <th className="py-3 px-4 font-semibold">Pemegang & Vendor</th>
-                  <th className="py-3 px-4 font-semibold text-center">QR Code</th>
-                  <th className="py-3 px-4 text-center font-semibold">Aksi</th>
+                  <th className="py-3.5 px-4 w-12 text-center">No</th>
+                  <th className="py-3.5 px-4 font-semibold">Kode Aset</th>
+                  <th className="py-3.5 px-4 font-semibold">Nama Elektronik &amp; Merk</th>
+                  <th className="py-3.5 px-4 font-semibold">Lokasi Penempatan</th>
+                  <th className="py-3.5 px-4 font-semibold">Penanggung Jawab</th>
+                  <th className="py-3.5 px-4 font-semibold">Kondisi</th>
+                  <th className="py-3.5 px-4 font-semibold">Status Operasional</th>
+                  <th className="py-3.5 px-4 font-semibold text-center w-24">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-400">
-                      Memuat data aset elektronik...
+                    <td colSpan={8} className="py-10 text-center text-slate-400">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-xs font-semibold">Memuat data inventaris elektronik...</span>
+                      </div>
                     </td>
                   </tr>
                 ) : assets.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-400">
-                      Tidak ada aset elektronik yang ditemukan.
+                    <td colSpan={8} className="py-10 text-center text-slate-400 font-medium">
+                      Tidak ada aset elektronik yang sesuai pencarian.
                     </td>
                   </tr>
                 ) : (
-                  assets.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-200/80">
-                            <img
-                              src={item.image || "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=120&auto=format&fit=crop&q=80"}
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <span 
-                              onClick={() => {
-                                setSelectedAssetForDetail(item);
-                                setIsDetailModalOpen(true);
-                              }}
-                              className="font-mono font-bold text-slate-900 block cursor-pointer hover:text-blue-600 transition-colors"
-                            >
-                              {item.assetTag}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-medium">
-                              {item.brand || 'Daikin'}
-                            </span>
-                          </div>
-                        </div>
+                  assets.map((item, index) => (
+                    <tr 
+                      key={item.id} 
+                      onClick={() => {
+                        setSelectedAssetForDetail(item);
+                        setIsDetailModalOpen(true);
+                      }}
+                      className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
+                    >
+                      <td className="py-3.5 px-4 text-center text-slate-400 font-mono">
+                        {index + 1}
                       </td>
-                      <td 
-                        onClick={() => {
-                          setSelectedAssetForDetail(item);
-                          setIsDetailModalOpen(true);
-                        }}
-                        className="py-3 px-4 font-semibold text-slate-800 cursor-pointer hover:text-blue-600 transition-colors"
-                      >
-                        {item.name}
+                      <td className="py-3.5 px-4 font-mono font-bold text-blue-600 group-hover:underline">
+                        {item.assetTag}
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
-                        <span className="font-medium text-slate-800 block text-[11px]">
-                          {item.specificAttributes?.wattage ? `${item.specificAttributes.wattage} Watt` : (item.specification || 'Daya Standar')}
-                        </span>
-                        <span className="text-[10px] text-slate-500">
-                          Siklus Servis: Tiap {item.specificAttributes?.maintenanceCycleMonths || 3} Bulan
+                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                        <div>{item.name}</div>
+                        {(item.brand || item.model) && (
+                          <span className="text-[10px] text-slate-400 font-normal">
+                            {item.brand} {item.model ? `• ${item.model}` : ''}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600 font-medium">
+                        {item.locationName || item.location || '-'}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600 font-medium">
+                        {item.assignedUserName || item.assignedTo || 'Tim GA / Umum'}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          item.condition === 'Baik'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : item.condition === 'Perbaikan'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}>
+                          {item.condition}
                         </span>
                       </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <img
-                            src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&auto=format&fit=crop&q=80"
-                            alt="PIC"
-                            className="w-6 h-6 rounded-full object-cover"
-                          />
-                          <div>
-                            <span className="font-medium text-slate-800 text-[11px] block">
-                              {item.assignedUserName || item.assignedTo || 'General Affairs'}
-                            </span>
-                            <span className="text-[10px] text-blue-600 font-semibold">
-                              {item.specificAttributes?.vendorStatus || item.specificAttributes?.vendorName || item.brand || 'Vendor Rekanan'}
-                            </span>
-                          </div>
+                      <td className="py-3.5 px-4">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          item.status === 'Aktif'
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setSelectedAssetForQR(item);
+                              setIsQRModalOpen(true);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            title="Label QR Code"
+                          >
+                            <QrCode className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedAssetForDetail(item);
+                              setIsDetailModalOpen(true);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                            title="Detail Aset"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
                         </div>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <button
-                          onClick={() => {
-                            setSelectedAssetForQR(item);
-                            setIsQRModalOpen(true);
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-flex items-center justify-center"
-                        >
-                          <QrCode className="w-4 h-4" />
-                        </button>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
                       </td>
                     </tr>
                   ))

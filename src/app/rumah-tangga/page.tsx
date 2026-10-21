@@ -8,7 +8,8 @@ import {
   QrCode, 
   Download,
   Eye,
-  Printer
+  Printer,
+  Home
 } from 'lucide-react';
 import { Asset } from '@/types';
 import { QRModal } from '@/components/QRModal';
@@ -49,8 +50,9 @@ export default function RumahTanggaPage() {
         {/* Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Fasilitas Rumah Tangga
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+              <Home className="w-6 h-6 text-blue-600" />
+              <span>Fasilitas Rumah Tangga</span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
               Perlengkapan operasional, fasilitas pantry, sanitasi, dan utilitas kantor
@@ -90,7 +92,7 @@ export default function RumahTanggaPage() {
         </div>
 
         {/* Filter & Search Bar */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between gap-3">
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="relative w-full sm:w-80">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -101,8 +103,8 @@ export default function RumahTanggaPage() {
               className="w-full pl-9 pr-3.5 py-2 bg-slate-50 text-xs text-slate-800 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
             />
           </div>
-          <span className="text-xs font-semibold text-slate-500">
-            Total: <span className="text-slate-900 font-bold">{assets.length}</span> Aset
+          <span className="text-xs font-semibold text-slate-500 self-end sm:self-auto">
+            Total Fasilitas RT: <span className="text-slate-900 font-bold">{assets.length}</span> Unit
           </span>
         </div>
 
@@ -114,10 +116,10 @@ export default function RumahTanggaPage() {
                 <tr>
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4 font-semibold">Kode Aset</th>
-                  <th className="py-3.5 px-4 font-semibold">Nama Perangkat</th>
+                  <th className="py-3.5 px-4 font-semibold">Nama Fasilitas &amp; Merk</th>
                   <th className="py-3.5 px-4 font-semibold">Lokasi Penempatan</th>
                   <th className="py-3.5 px-4 font-semibold">Kondisi</th>
-                  <th className="py-3.5 px-4 font-semibold">Status</th>
+                  <th className="py-3.5 px-4 font-semibold">Status Operasional</th>
                   <th className="py-3.5 px-4 font-semibold text-center w-24">Aksi</th>
                 </tr>
               </thead>
@@ -154,7 +156,12 @@ export default function RumahTanggaPage() {
                         {item.assetTag}
                       </td>
                       <td className="py-3.5 px-4 font-bold text-slate-900">
-                        {item.name}
+                        <div>{item.name}</div>
+                        {(item.brand || item.model) && (
+                          <span className="text-[10px] text-slate-400 font-normal">
+                            {item.brand} {item.model ? `• ${item.model}` : ''}
+                          </span>
+                        )}
                       </td>
                       <td className="py-3.5 px-4 text-slate-600 font-medium">
                         {item.locationName || item.location || '-'}

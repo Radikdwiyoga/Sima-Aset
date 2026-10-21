@@ -1,20 +1,38 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Search, Bell, ChevronDown, LogOut, Menu, Shield, AlertTriangle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { 
+  Search, 
+  Bell, 
+  ChevronDown, 
+  LogOut, 
+  Menu, 
+  AlertTriangle,
+  Layers,
+  ArrowRight,
+  X
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { UserRole } from '@/types';
 import { getRoleDisplayName } from '@/lib/permissions';
 import { DataService } from '@/lib/dataService';
 import { ReportDamageModal } from '@/components/ReportDamageModal';
+import { Asset } from '@/types';
 
 export function Navbar({ onToggleMobileMenu }: { onToggleMobileMenu?: () => void }) {
+  const router = useRouter();
   const { user, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showReportDamage, setShowReportDamage] = useState(false);
   const [notifications, setNotifications] = useState<{ id: string; title: string; subtitle: string; href: string; type: string }[]>([]);
+
+  // Top Global Search States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Asset[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const reloadNotifications = () => {
     const notifs: { id: string; title: string; subtitle: string; href: string; type: string }[] = [];
@@ -66,10 +84,41 @@ export function Navbar({ onToggleMobileMenu }: { onToggleMobileMenu?: () => void
     reloadNotifications();
   }, [showNotifications]);
 
+  // Live real-time search execution
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const matches = DataService.getAssets({ search: searchQuery.trim() });
+    setSearchResults(matches);
+  }, [searchQuery]);
+
+  // Click outside to close search dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setIsSearchOpen(false);
+    router.push(`/aset?search=${encodeURIComponent(searchQuery.trim())}`);
+  };
+
   return (
     <header className="h-16 sm:h-18 bg-white border-b border-slate-200/90 px-3.5 sm:px-8 flex items-center justify-between sticky top-0 z-30 shadow-xs w-full">
-      {/* Left: Mobile Hamburger & Search Input */}
-      <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0 max-w-xs sm:max-w-md">
+      {/* Left: Mobile Hamburger & Interactive Search Bar */}
+      <div 
+        ref={searchContainerRef}
+        className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0 max-w-xs sm:max-w-md relative"
+      >
         <button
           onClick={onToggleMobileMenu}
           className="p-2 sm:p-2.5 md:hidden text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer shrink-0"
@@ -78,14 +127,95 @@ export function Navbar({ onToggleMobileMenu }: { onToggleMobileMenu?: () => void
           <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
-        <div className="relative flex-1 min-w-0">
+        <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-0">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 sm:left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
+            value={searchQuery}
+            onFocus={() => setIsSearchOpen(true)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setIsSearchOpen(true);
+            }}
             placeholder="Cari aset, serial number, atau ruangan..."
-            className="w-full pl-9 sm:pl-11 pr-3 sm:pr-4 py-2 sm:py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white text-xs sm:text-sm text-slate-800 placeholder-slate-400 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium truncate"
+            className="w-full pl-9 sm:pl-11 pr-8 py-2 sm:py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white text-xs sm:text-sm text-slate-800 placeholder-slate-400 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium truncate"
           />
-        </div>
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setSearchResults([]);
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </form>
+
+        {/* Real-time Search Results Dropdown */}
+        {isSearchOpen && searchQuery.trim() && (
+          <div className="absolute left-0 top-full mt-2 w-full sm:w-[480px] bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 text-xs font-bold text-slate-500">
+              <span>Hasil Pencarian ({searchResults.length})</span>
+              <span className="text-[10px] text-slate-400">Tekan Enter untuk cari semua</span>
+            </div>
+
+            <div className="max-h-72 overflow-y-auto space-y-1 divide-y divide-slate-50">
+              {searchResults.length === 0 ? (
+                <div className="py-6 text-center text-xs text-slate-400">
+                  Tidak ditemukan aset dengan kata kunci &quot;{searchQuery}&quot;.
+                </div>
+              ) : (
+                searchResults.slice(0, 5).map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setIsSearchOpen(false);
+                      setSearchQuery('');
+                      router.push(`/aset/${item.id}`);
+                    }}
+                    className="w-full text-left p-2.5 hover:bg-blue-50/60 rounded-xl transition-colors flex items-center justify-between gap-3 group cursor-pointer"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded">
+                          {item.assetTag}
+                        </span>
+                        <span className="text-xs font-bold text-slate-900 truncate group-hover:text-blue-600">
+                          {item.name}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                        {item.category} &bull; {item.location || item.locationName || 'Lokasi umum'}
+                      </p>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                      item.status === 'Aktif' 
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    }`}>
+                      {item.status}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+
+            {searchResults.length > 0 && (
+              <button
+                type="button"
+                onClick={handleSearchSubmit}
+                className="w-full mt-2 pt-2 border-t border-slate-100 text-center text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1.5 py-1.5 cursor-pointer"
+              >
+                <span>Lihat semua {searchResults.length} hasil di Data Aset</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right Controls */}
@@ -116,7 +246,7 @@ export function Navbar({ onToggleMobileMenu }: { onToggleMobileMenu?: () => void
           {showNotifications && (
             <div className="absolute right-0 mt-3 w-88 bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-4 z-50 text-sm animate-in fade-in slide-in-from-top-2 duration-150">
               <div className="font-bold text-slate-900 pb-2.5 border-b border-slate-100 flex justify-between items-center">
-                <span>Pengingat & Servis Aset</span>
+                <span>Pengingat &amp; Servis Aset</span>
                 <span className="text-xs text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full font-bold">
                   {notifications.length} Info
                 </span>
@@ -153,42 +283,49 @@ export function Navbar({ onToggleMobileMenu }: { onToggleMobileMenu?: () => void
             <img
               src={user?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80"}
               alt={user?.name || "User"}
-              className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-500/20"
+              className="w-8 h-8 rounded-full object-cover ring-2 ring-slate-100"
             />
-            <div className="text-left hidden lg:block leading-tight">
-              <p className="text-sm font-bold text-slate-900">{user?.name || "Admin"}</p>
-              <p className="text-xs text-slate-500 font-medium capitalize mt-0.5">
+            <div className="hidden lg:block text-left">
+              <p className="text-xs font-bold text-slate-800 leading-tight">
+                {user?.name || 'Administrator'}
+              </p>
+              <p className="text-[11px] text-slate-500 font-medium">
                 {getRoleDisplayName(user?.role)}
               </p>
             </div>
-            <ChevronDown className="w-4 h-4 text-slate-400" />
+            <ChevronDown className="w-4 h-4 text-slate-400 hidden lg:block" />
           </button>
 
           {showProfileMenu && (
-            <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200/90 py-2 z-50 text-sm animate-in fade-in slide-in-from-top-2 duration-150">
-              <div className="px-4 py-3 border-b border-slate-100">
+            <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 text-xs animate-in fade-in duration-100">
+              <div className="px-4 py-2 border-b border-slate-100">
                 <p className="font-bold text-slate-900">{user?.name}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{user?.email}</p>
-                <div className="mt-2 inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                  {getRoleDisplayName(user?.role)}
-                </div>
+                <p className="text-slate-500">{user?.email}</p>
               </div>
 
-              <div className="py-1">
-                <button
-                  onClick={logout}
-                  className="w-full text-left px-4 py-2.5 text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors font-semibold text-sm cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Keluar dari Akun (Logout)</span>
-                </button>
-              </div>
+              <Link
+                href="/pengaturan"
+                onClick={() => setShowProfileMenu(false)}
+                className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 flex items-center gap-2"
+              >
+                <span>Pengaturan Profil &amp; Akun</span>
+              </Link>
+
+              <button
+                onClick={() => {
+                  setShowProfileMenu(false);
+                  logout();
+                }}
+                className="w-full text-left px-4 py-2.5 hover:bg-rose-50 text-rose-600 flex items-center gap-2 font-medium border-t border-slate-100 mt-1 cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Keluar (Logout)</span>
+              </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Self-Service Damage Report Modal */}
       <ReportDamageModal
         isOpen={showReportDamage}
         onClose={() => setShowReportDamage(false)}
