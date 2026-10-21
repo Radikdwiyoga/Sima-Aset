@@ -21,7 +21,7 @@ export function RoleGuard({
   fallbackTitle = 'Akses Ditolak',
   fallbackDescription = 'Anda tidak memiliki hak akses untuk membuka halaman atau fitur ini.'
 }: RoleGuardProps) {
-  const { user, switchRole } = useAuth();
+  const { user } = useAuth();
   const permissions = getRolePermissions(user?.role);
 
   let isAllowed = true;
@@ -76,14 +76,6 @@ export function RoleGuard({
               <ArrowLeft className="w-4 h-4" />
               <span>Kembali ke Dashboard</span>
             </Link>
-
-            <button
-              onClick={() => switchRole('super_admin')}
-              className="w-full sm:flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm shadow-blue-500/20"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Ganti ke Super Admin</span>
-            </button>
           </div>
         </div>
       </div>

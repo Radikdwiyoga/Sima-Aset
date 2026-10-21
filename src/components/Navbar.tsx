@@ -10,7 +10,7 @@ import { DataService } from '@/lib/dataService';
 import { ReportDamageModal } from '@/components/ReportDamageModal';
 
 export function Navbar({ onToggleMobileMenu }: { onToggleMobileMenu?: () => void }) {
-  const { user, logout, switchRole } = useAuth();
+  const { user, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showReportDamage, setShowReportDamage] = useState(false);
@@ -66,14 +66,6 @@ export function Navbar({ onToggleMobileMenu }: { onToggleMobileMenu?: () => void
     reloadNotifications();
   }, [showNotifications]);
 
-  const rolesList: { role: UserRole; label: string }[] = [
-    { role: 'super_admin', label: '👑 Super Admin (Akses Penuh)' },
-    { role: 'admin_it', label: '🛠️ Admin IT (Hardware/Software)' },
-    { role: 'admin_ga', label: '🏢 Admin GA (Fasilitas & Umum)' },
-    { role: 'management', label: '📊 Manajemen (Laporan & Audit)' },
-    { role: 'staff', label: '👤 Staff / Pemohon (Akses Terbatas)' }
-  ];
-
   return (
     <header className="h-16 sm:h-18 bg-white border-b border-slate-200/90 px-3.5 sm:px-8 flex items-center justify-between sticky top-0 z-30 shadow-xs w-full">
       {/* Left: Mobile Hamburger & Search Input */}
@@ -107,23 +99,6 @@ export function Navbar({ onToggleMobileMenu }: { onToggleMobileMenu?: () => void
           <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
           <span className="hidden sm:inline">Lapor Kerusakan</span>
         </button>
-
-        {/* Role Quick Switcher Pill (Convenient for Pair Review & Demo) */}
-        <div className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-800 border border-blue-200/80 px-3 py-1.5 rounded-xl shadow-xs">
-          <Shield className="w-4 h-4 text-blue-600 shrink-0" />
-          <span className="text-xs font-bold text-slate-600">Peran:</span>
-          <select
-            value={user?.role || 'super_admin'}
-            onChange={(e) => switchRole(e.target.value as UserRole)}
-            className="bg-transparent text-xs font-bold text-blue-900 border-none outline-none cursor-pointer pr-1"
-          >
-            {rolesList.map(r => (
-              <option key={r.role} value={r.role} className="text-slate-800 bg-white font-medium py-1">
-                {r.label}
-              </option>
-            ))}
-          </select>
-        </div>
 
         {/* Notifications Bell */}
         <div className="relative">
