@@ -43,22 +43,6 @@ export default function ElektronikPage() {
     fetchAssets();
   }, [search]);
 
-  // Calendar dates for the maintenance timeline (Matching Mockup 5)
-  const timelineDays = [
-    { day: 16, active: false, label: '' },
-    { day: 17, active: false, label: '' },
-    { day: 18, active: true, label: 'Epson Servis', color: 'bg-amber-400 text-amber-950' },
-    { day: 19, active: false, label: '' },
-    { day: 20, active: true, label: 'Cuci AC Daikin', color: 'bg-emerald-400 text-emerald-950' },
-    { day: 21, active: false, label: '' },
-    { day: 22, active: false, label: '' },
-    { day: 23, active: false, label: '' },
-    { day: 24, active: true, label: 'Inspeksi CCTV', color: 'bg-blue-300 text-blue-950' },
-    { day: 26, active: false, label: '' },
-    { day: 29, active: false, label: '' },
-    { day: 30, active: true, label: 'Sound System', color: 'bg-rose-400 text-rose-950' }
-  ];
-
   return (
     <DashboardLayout>
       <div className="space-y-6 w-full">
@@ -87,51 +71,6 @@ export default function ElektronikPage() {
               <Plus className="w-3.5 h-3.5" />
               <span>+ Tambah Elektronik</span>
             </button>
-          </div>
-        </div>
-
-        {/* Top Banner: Jadwal Servis Rutin / Maintenance (Matching Mockup 5) */}
-        <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-blue-600/20">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <Wrench className="w-4 h-4 text-blue-200" />
-                <h3 className="font-bold text-sm tracking-tight">
-                  Jadwal Servis Rutin / Maintenance
-                </h3>
-              </div>
-              <p className="text-[11px] text-blue-100/80 mt-0.5">
-                Monitoring berkala perawatan AC, proyektor, dan perangkat elektronik kantor
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-white/20 px-2.5 py-1 rounded-full text-white backdrop-blur-xs">
-                Vendor Status: Aktif
-              </span>
-            </div>
-          </div>
-
-          {/* Timeline Bar Days */}
-          <div className="bg-blue-900/40 rounded-xl p-3 border border-white/10 backdrop-blur-xs overflow-x-auto">
-            <div className="flex items-center justify-between gap-2 min-w-[500px]">
-              {timelineDays.map((t) => (
-                <div key={t.day} className="flex-1 flex flex-col items-center">
-                  <span className="text-[10px] font-semibold text-blue-200 mb-1">
-                    {t.day}
-                  </span>
-                  <div
-                    className={`w-full py-1.5 px-1 rounded text-center text-[9px] font-bold transition-all ${
-                      t.active
-                        ? `${t.color} shadow-xs font-black`
-                        : 'bg-white/10 text-white/40 hover:bg-white/20'
-                    }`}
-                  >
-                    {t.active ? t.label : '•'}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
 

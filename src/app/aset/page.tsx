@@ -45,7 +45,6 @@ export default function AsetPage() {
   const [allAssets, setAllAssets] = useState<Asset[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<{ label: string }[]>([]);
   const [locationOptions, setLocationOptions] = useState<{ name: string }[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showMultiPrint, setShowMultiPrint] = useState(false);
 
   const fetchAssets = () => {
@@ -89,21 +88,6 @@ export default function AsetPage() {
     exportAssetsToExcel(assets, `SIMA_Data_Aset_${activeTab}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-  const toggleSelectAll = () => {
-    if (selectedIds.size === pageItems.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(pageItems.map(a => a.id)));
-    }
-  };
-  const selectedAssets = assets.filter(a => selectedIds.has(a.id));
 
   const tabs: { label: 'Semua' | 'Aktif' | 'Tidak Aktif' | 'Dalam Perbaikan'; count: number }[] = [
     { label: 'Semua', count: allAssets.length },
@@ -322,9 +306,6 @@ export default function AsetPage() {
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50/80 text-slate-600 uppercase text-xs tracking-wider border-b border-slate-200/80 font-bold">
                 <tr>
-                  <th className="py-4 px-3 w-10">
-                    <input type="checkbox" checked={pageItems.length > 0 && selectedIds.size === pageItems.length} onChange={toggleSelectAll} className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
-                  </th>
                   <th className="py-4 px-5 w-14 text-center">No</th>
                   <th className="py-4 px-5">Kode Aset</th>
                   <th className="py-4 px-5">Nama Aset</th>
@@ -338,7 +319,7 @@ export default function AsetPage() {
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-slate-400">
+                    <td colSpan={8} className="py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center gap-2">
                         <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                         <span className="text-xs font-semibold">Memuat data inventaris...</span>
@@ -347,7 +328,7 @@ export default function AsetPage() {
                   </tr>
                 ) : pageItems.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-slate-400">
+                    <td colSpan={8} className="py-12 text-center text-slate-400">
                       Tidak ada aset yang sesuai kriteria pencarian.
                     </td>
                   </tr>
@@ -440,7 +421,7 @@ export default function AsetPage() {
       </div>
 
       <MultiLabelPrintModal
-        assets={selectedAssets}
+        assets={assets}
         isOpen={showMultiPrint}
         onClose={() => setShowMultiPrint(false)}
       />

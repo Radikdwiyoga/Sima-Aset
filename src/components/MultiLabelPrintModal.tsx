@@ -158,3 +158,4 @@ export function MultiLabelPrintModal({ assets, isOpen, onClose }: MultiLabelPrin
     </>
   );
 }
+
