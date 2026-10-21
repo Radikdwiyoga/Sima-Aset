@@ -114,37 +114,61 @@
       "id": "loc-1",
       "name": "Kantor Pusat",
       "description": "Lokasi utama perusahaan",
-      "count": 420
+      "count": 420,
+      "latitude": -6.175392,
+      "longitude": 106.827153,
+      "address": "Jl. Medan Merdeka Barat No. 12, Gambir, Jakarta Pusat",
+      "city": "Jakarta Pusat"
     },
     {
       "id": "loc-2",
       "name": "Cabang A",
       "description": "Kantor cabang wilayah A",
-      "count": 280
+      "count": 280,
+      "latitude": -6.917464,
+      "longitude": 107.619123,
+      "address": "Jl. Asia Afrika No. 45, Braga, Sumur Bandung, Kota Bandung",
+      "city": "Bandung"
     },
     {
       "id": "loc-3",
       "name": "Cabang B",
       "description": "Kantor cabang wilayah B",
-      "count": 210
+      "count": 210,
+      "latitude": -7.257472,
+      "longitude": 112.752088,
+      "address": "Jl. Pemuda No. 31, Embong Kaliasin, Genteng, Kota Surabaya",
+      "city": "Surabaya"
     },
     {
       "id": "loc-4",
       "name": "Gudang",
       "description": "Gudang penyimpanan aset",
-      "count": 180
+      "count": 180,
+      "latitude": -6.23827,
+      "longitude": 106.975573,
+      "address": "Kawasan Industri MM2100, Cikarang Barat, Kab. Bekasi",
+      "city": "Bekasi"
     },
     {
       "id": "loc-5",
       "name": "Ruang Rapat",
       "description": "Ruang rapat lantai 2",
-      "count": 120
+      "count": 120,
+      "latitude": -6.229728,
+      "longitude": 106.80749,
+      "address": "Sudirman Central Business District (SCBD) Lot 8, Jakarta Selatan",
+      "city": "Jakarta Selatan"
     },
     {
       "id": "loc-6",
       "name": "Lainnya",
       "description": "Lokasi penempatan lain",
-      "count": 38
+      "count": 38,
+      "latitude": -6.178306,
+      "longitude": 106.631889,
+      "address": "Jl. Jenderal Sudirman No. 88, Babakan, Kota Tangerang",
+      "city": "Tangerang"
     }
   ],
   "assets": [

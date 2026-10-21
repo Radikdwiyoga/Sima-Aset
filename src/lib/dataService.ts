@@ -672,23 +672,35 @@ export const DataService = {
   getLocations(): Location[] {
     const locations = getStoredLocations();
     const assets = getStoredAssets();
-    return locations.map(loc => ({
-      ...loc,
-      // Count by locationId when present; fall back to name match only for
-      // legacy assets that have no locationId (avoids double-counting).
-      count: assets.filter(a =>
-        a.locationId ? a.locationId === loc.id : (a.location || '').toLowerCase().includes(loc.name.toLowerCase())
-      ).length
-    }));
+    const defaults = (initialDb.locations as any[]) || [];
+    return locations.map(loc => {
+      const def = defaults.find((d: any) => d.id === loc.id);
+      return {
+        ...loc,
+        latitude: loc.latitude !== undefined ? loc.latitude : def?.latitude,
+        longitude: loc.longitude !== undefined ? loc.longitude : def?.longitude,
+        address: loc.address || def?.address,
+        city: loc.city || def?.city,
+        // Count by locationId when present; fall back to name match only for
+        // legacy assets that have no locationId (avoids double-counting).
+        count: assets.filter(a =>
+          a.locationId ? a.locationId === loc.id : (a.location || '').toLowerCase().includes(loc.name.toLowerCase())
+        ).length
+      };
+    });
   },
 
-  createLocation(data: { name: string; description?: string }): Location {
+  createLocation(data: { name: string; description?: string; latitude?: number; longitude?: number; address?: string; city?: string }): Location {
     const list = getStoredLocations();
     const newLoc: Location = {
       id: `loc-${Date.now()}`,
       name: data.name,
       description: data.description || '',
-      count: 0
+      count: 0,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      address: data.address,
+      city: data.city
     };
     list.push(newLoc);
     saveStoredLocations(list);

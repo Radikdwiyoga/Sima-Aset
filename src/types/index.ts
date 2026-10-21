@@ -35,6 +35,10 @@ export interface Location {
   name: string;
   description: string;
   count: number;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+  city?: string;
 }
 
 export type AssetCondition = 'Baik' | 'Perbaikan' | 'Rusak';
