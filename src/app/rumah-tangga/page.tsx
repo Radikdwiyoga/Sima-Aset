@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Asset } from '@/types';
 import { QRModal } from '@/components/QRModal';
+import { MultiLabelPrintModal } from '@/components/MultiLabelPrintModal';
 import { AddAssetModal } from '@/components/AddAssetModal';
 import { AssetDetailModal } from '@/components/AssetDetailModal';
 import { exportAssetsToCSV } from '@/lib/export';
@@ -25,6 +26,7 @@ export default function RumahTanggaPage() {
   const [selectedAssetForQR, setSelectedAssetForQR] = useState<Asset | null>(null);
   const [selectedAssetForDetail, setSelectedAssetForDetail] = useState<Asset | null>(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [isMultiQRModalOpen, setIsMultiQRModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -71,11 +73,11 @@ export default function RumahTanggaPage() {
             <button
               onClick={() => {
                 if (assets.length > 0) {
-                  setSelectedAssetForQR(assets[0]);
-                  setIsQRModalOpen(true);
+                  setIsMultiQRModalOpen(true);
                 }
               }}
               className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+              title="Cetak label QR untuk semua fasilitas rumah tangga di halaman ini"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Cetak Label QR</span>
@@ -223,6 +225,13 @@ export default function RumahTanggaPage() {
         asset={selectedAssetForQR}
         isOpen={isQRModalOpen}
         onClose={() => setIsQRModalOpen(false)}
+      />
+
+      <MultiLabelPrintModal
+        assets={assets}
+        isOpen={isMultiQRModalOpen}
+        onClose={() => setIsMultiQRModalOpen(false)}
+        title="Cetak Multi Label QR Fasilitas Rumah Tangga"
       />
 
       <AssetDetailModal

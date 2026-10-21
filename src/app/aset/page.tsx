@@ -151,9 +151,30 @@ export default function AsetPage() {
                     <Printer className="w-4 h-4 text-blue-600" />
                     <span>Cetak / Download PDF</span>
                   </button>
+                  <button
+                    onClick={() => {
+                      setShowExportMenu(false);
+                      setShowMultiPrint(true);
+                    }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 flex items-center gap-2.5 transition-colors cursor-pointer"
+                  >
+                    <QrCode className="w-4 h-4 text-purple-600" />
+                    <span>Cetak Semua Label QR</span>
+                  </button>
                 </div>
               )}
             </div>
+
+            {/* Cetak Multi Label QR Button */}
+            <button
+              type="button"
+              onClick={() => setShowMultiPrint(true)}
+              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-xs cursor-pointer"
+              title="Cetak stiker label QR untuk semua data aset yang tampil"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Cetak Label QR</span>
+            </button>
 
             {/* Import Excel Button */}
             {canCreate && (
