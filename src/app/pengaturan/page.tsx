@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getRoleDisplayName } from '@/lib/permissions';
 import { DataService } from '@/lib/dataService';
 import { User, UserRole } from '@/types';
+import { UserAvatar } from '@/components/UserAvatar';
 
 export default function PengaturanPage() {
   const { user } = useAuth();
@@ -197,11 +198,7 @@ export default function PengaturanPage() {
                           </td>
                           <td className="py-4 px-5 font-bold text-slate-900">
                             <div className="flex items-center gap-2.5">
-                              <img
-                                src={u.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80"}
-                                alt={u.name}
-                                className="w-7 h-7 rounded-full object-cover"
-                              />
+                              <UserAvatar name={u.name} size="sm" />
                               <span>{u.name}</span>
                             </div>
                           </td>
@@ -358,9 +355,16 @@ export default function PengaturanPage() {
           {/* Tab 2: Profil Saya */}
           {activeTab === 'Profil Saya' && (
             <div className="bg-white rounded-2xl p-8 border border-slate-200/80 shadow-xs max-w-2xl">
-              <h2 className="text-lg font-bold text-slate-900 mb-6 pb-3 border-b border-slate-100">
-                Informasi Akun Pribadi
-              </h2>
+              <div className="flex items-center gap-4 pb-6 mb-6 border-b border-slate-100">
+                <UserAvatar name={name || user?.name} size="xl" />
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">{name || user?.name}</h3>
+                  <p className="text-xs text-slate-500">{email || user?.email}</p>
+                  <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    {getRoleDisplayName(user?.role)}
+                  </span>
+                </div>
+              </div>
 
               <form onSubmit={handleSaveProfile} className="space-y-6 text-sm">
                 <div>
