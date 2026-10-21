@@ -37,6 +37,29 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [data, setData] = useState<any>(null);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [currentDateTime, setCurrentDateTime] = useState<string>('');
+
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+      const datePart = now.toLocaleDateString('id-ID', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+      const timePart = now.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      setCurrentDateTime(`${datePart} • ${timePart} WIB`);
+    };
+
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     try {
@@ -146,8 +169,8 @@ export default function DashboardPage() {
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 shadow-xs">
-              <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
-              <span>1 Jan 2026 &ndash; 30 Sep 2026</span>
+              <Clock className="w-4 h-4 text-blue-600 shrink-0 animate-pulse" />
+              <span className="tabular-nums">{currentDateTime || "Memuat waktu..."}</span>
             </div>
             
             <button
