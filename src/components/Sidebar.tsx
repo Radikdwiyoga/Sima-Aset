@@ -17,7 +17,8 @@ import {
   Monitor,
   Cpu,
   Armchair,
-  Home
+  Home,
+  Car
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getRolePermissions, getRoleDisplayName } from '@/lib/permissions';
@@ -46,6 +47,7 @@ const navGroups: NavGroup[] = [
     items: [
       { name: 'Semua Aset', href: '/aset', icon: Layers },
       { name: 'Perangkat IT', href: '/aset-it', icon: Monitor },
+      { name: 'Kendaraan', href: '/kendaraan', icon: Car },
       { name: 'Elektronik', href: '/elektronik', icon: Cpu },
       { name: 'Furnitur', href: '/furnitur', icon: Armchair },
       { name: 'Fasilitas RT', href: '/rumah-tangga', icon: Home }
